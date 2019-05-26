@@ -19,11 +19,10 @@ Go to **Settings > Application Keys** from the web console of your Threat Stack
 account, then find the following three values under **REST API Key**, copy/paste
 each of them into your integration configuration screen in JupiterOne.
 
-- **API Key** (`apiKey`)
-
+- **Organization Name** (`orgName`)
 - **Organization ID** (`orgId`)
-
 - **User ID** (`userId`)
+- **API Key** (`apiKey`)
 
 ## Entities
 
@@ -38,8 +37,8 @@ The following entity resources are ingested when the integration runs:
 
 The following relationships are created/mapped:
 
-| Relationships                                       |
-| --------------------------------------------------- |
-| `threatstack_account` **HAS** `threatstack_agent`   |
-| `threatstack_agent` **PROTECTS** `aws_ec2_instance` |
-| `threatstack_agent` **PROTECTS** `server`           |
+| Relationships                                     |
+| ------------------------------------------------- |
+| `threatstack_account` **HAS** `threatstack_agent` |
+| `threatstack_agent` **PROTECTS** `aws_instance`   |
+| `threatstack_agent` **PROTECTS** `server`         |

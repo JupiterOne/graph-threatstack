@@ -1,9 +1,9 @@
 {
-  "name": "@jupiterone/jupiter-integration-cbdefense",
+  "name": "@jupiterone/jupiter-integration-threatstack",
   "version": "0.4.5",
-  "description": "JupiterOne managed integration for Carbon Black Defense.",
+  "description": "JupiterOne managed integration for Threat Stack.",
   "main": "index.js",
-  "repository": "https://github.com/jupiterone/jupiter-integration-cbdefense",
+  "repository": "https://github.com/jupiterone/jupiter-integration-threatstack",
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "start": "ts-node --require dotenv/config tools/execute.ts | bunyan",
