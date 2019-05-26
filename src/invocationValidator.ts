@@ -19,27 +19,9 @@ export default async function invocationValidator(
 
   const { apiKey, orgId, orgName, userId } = instanceConfig;
 
-  if (!orgId) {
+  if (!(orgId && orgName && userId && apiKey)) {
     throw new IntegrationInstanceConfigError(
-      `Missing Organization ID in configuration (accountId=${accountId})`,
-    );
-  }
-
-  if (!orgName) {
-    throw new IntegrationInstanceConfigError(
-      `Missing Organization Name in configuration (accountId=${accountId})`,
-    );
-  }
-
-  if (!userId) {
-    throw new IntegrationInstanceConfigError(
-      `Missing User ID in configuration (accountId=${accountId})`,
-    );
-  }
-
-  if (!apiKey) {
-    throw new IntegrationInstanceConfigError(
-      `Missing API Key in configuration (accountId=${accountId})`,
+      "Instance configuration requires all of { orgId, orgName, userId, apiKey }",
     );
   }
 }

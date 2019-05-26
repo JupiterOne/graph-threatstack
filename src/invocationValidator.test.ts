@@ -3,6 +3,9 @@ import uuid from "uuid/v4";
 import invocationValidator from "./invocationValidator";
 import { ThreatStackIntegrationConfig } from "./types";
 
+const missingConfigItemMsg =
+  "Instance configuration requires all of { orgId, orgName, userId, apiKey }";
+
 test("should throw error if configuration is not found", async () => {
   const accountId = uuid();
   const executionContext = createTestIntegrationExecutionContext({
@@ -32,7 +35,7 @@ test("should throw error if User Id is missing", async () => {
   });
 
   await expect(invocationValidator(executionContext)).rejects.toThrow(
-    `Missing User ID in configuration (accountId=${accountId})`,
+    missingConfigItemMsg,
   );
 });
 
@@ -52,7 +55,7 @@ test("should throw error if Org Id is missing", async () => {
   });
 
   await expect(invocationValidator(executionContext)).rejects.toThrow(
-    `Missing Organization ID in configuration (accountId=${accountId})`,
+    missingConfigItemMsg,
   );
 });
 
@@ -72,7 +75,7 @@ test("should throw error if Org Name is missing", async () => {
   });
 
   await expect(invocationValidator(executionContext)).rejects.toThrow(
-    `Missing Organization Name in configuration (accountId=${accountId})`,
+    missingConfigItemMsg,
   );
 });
 
@@ -92,6 +95,6 @@ test("should throw if api key is missing", async () => {
   });
 
   await expect(invocationValidator(executionContext)).rejects.toThrow(
-    `Missing API Key in configuration (accountId=${accountId})`,
+    missingConfigItemMsg,
   );
 });
