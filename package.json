@@ -1,6 +1,6 @@
 {
   "name": "@jupiterone/jupiter-integration-threatstack",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "JupiterOne managed integration for Threat Stack.",
   "main": "index.js",
   "repository": "https://github.com/jupiterone/jupiter-integration-threatstack",
