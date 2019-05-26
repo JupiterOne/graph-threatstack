@@ -23,8 +23,7 @@ fs.writeFileSync(
 fs.copySync("LICENSE", "dist/LICENSE");
 fs.copySync("README.md", "dist/README.md");
 
-const packageNameSansOrg = pkg.name.split("/").pop();
-const baseDocsPath = `docs/jupiterone-io/${packageNameSansOrg}`;
+const baseDocsPath = `docs/jupiterone-io/index`;
 
 let docsExtension;
 if (fs.pathExistsSync(`${baseDocsPath}.md`)) {
@@ -36,7 +35,7 @@ if (fs.pathExistsSync(`${baseDocsPath}.md`)) {
 if (docsExtension !== undefined) {
   fs.copySync(
     `${baseDocsPath}.${docsExtension}`,
-    `dist/docs/${packageNameSansOrg}.${docsExtension}`,
+    `dist/docs/index.${docsExtension}`,
   );
   fs.writeFileSync(
     "dist/docs/metadata.json",
