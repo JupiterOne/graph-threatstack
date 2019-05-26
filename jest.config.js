@@ -6,8 +6,9 @@ module.exports = {
   collectCoverageFrom: [
     "src/**/*.ts",
     "!src/index.ts",
-    "!src/CbDefenseClient.ts",
+    "!src/ThreatStackClient.ts",
     "!src/util/axios-util.ts",
+    "!src/util/*",
   ],
   moduleFileExtensions: ["ts", "js"],
   testEnvironment: "node",

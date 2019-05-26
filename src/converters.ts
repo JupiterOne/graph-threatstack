@@ -38,7 +38,7 @@ export function createAgentEntities(
       _key: `${PROVIDER_NAME}:agent:${item.id}`,
       _class: AGENT_ENTITY_CLASS,
       _type: AGENT_ENTITY_TYPE,
-      displayName: item.name || "threatstack-server-agent",
+      displayName: item.name || (item.hostname as string),
       id: item.id,
       instanceId: item.instanceId,
       status: item.status,

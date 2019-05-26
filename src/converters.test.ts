@@ -19,8 +19,8 @@ export const accountEntity: ThreatStackAccountEntity = {
   name: "my-ts-org",
 };
 
-export const agent: ThreatStackAgent = {
-  id: "8b0f0b28-7fce-11e9-a425-99cdd68cb067",
+export const agentBase: ThreatStackAgent = {
+  id: "8b0f0b28-7fce-11e9-a123-99cdd68cb066",
   instanceId: "i-0d0f1f32bea26a881",
   status: "online",
   createdAt: "2019-05-26T15:54:28.452Z",
@@ -29,11 +29,30 @@ export const agent: ThreatStackAgent = {
   name: "ip-10-50-140-117",
   description: "",
   hostname: "ip-10-50-140-117",
+  agentType: "investigate",
+  osVersion: "amzn 2018.03",
+  kernel: "4.14.114-83.126.amzn1.x86_64",
+};
+
+export const agentWithoutName: ThreatStackAgent = {
+  ...agentBase,
+  id: "8b0f0b28-7fce-11e9-a123-99cdd68cb067",
+  name: undefined,
+};
+
+export const agentWithIp: ThreatStackAgent = {
+  ...agentBase,
+  id: "8b0f0b28-7fce-11e9-a123-99cdd68cb068",
   ipAddresses: {
     private: ["10.50.140.117"],
     link_local: ["fe80::4d8:28ff:feed:7692"],
     public: ["34.195.165.153"],
   },
+};
+
+export const agentWithTags: ThreatStackAgent = {
+  ...agentBase,
+  id: "8b0f0b28-7fce-11e9-a123-99cdd68cb069",
   tags: [
     {
       source: "ec2",
@@ -60,59 +79,101 @@ export const agent: ThreatStackAgent = {
       value: "internal",
     },
   ],
-  agentType: "investigate",
-  osVersion: "amzn 2018.03",
-  kernel: "4.14.114-83.126.amzn1.x86_64",
 };
 
-export const agents: ThreatStackAgent[] = [agent];
+export const agents: ThreatStackAgent[] = [
+  agentBase,
+  agentWithoutName,
+  agentWithIp,
+  agentWithTags,
+];
 
 test("createAccountRelationships", () => {
-  const sensorEntities = createAgentEntities(agents);
+  const agentEntities = createAgentEntities(agents);
 
   expect(
     createAccountRelationships(
       accountEntity,
-      sensorEntities,
+      agentEntities,
       ACCOUNT_AGENT_RELATIONSHIP_TYPE,
     ),
   ).toEqual([
     {
       _class: "HAS",
       _fromEntityKey: accountEntity._key,
-      _key: `${accountEntity._key}_has_${sensorEntities[0]._key}`,
-      _toEntityKey: sensorEntities[0]._key,
+      _key: `${accountEntity._key}_has_${agentEntities[0]._key}`,
+      _toEntityKey: agentEntities[0]._key,
+      _type: ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+    },
+    {
+      _class: "HAS",
+      _fromEntityKey: accountEntity._key,
+      _key: `${accountEntity._key}_has_${agentEntities[1]._key}`,
+      _toEntityKey: agentEntities[1]._key,
+      _type: ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+    },
+    {
+      _class: "HAS",
+      _fromEntityKey: accountEntity._key,
+      _key: `${accountEntity._key}_has_${agentEntities[2]._key}`,
+      _toEntityKey: agentEntities[2]._key,
+      _type: ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+    },
+    {
+      _class: "HAS",
+      _fromEntityKey: accountEntity._key,
+      _key: `${accountEntity._key}_has_${agentEntities[3]._key}`,
+      _toEntityKey: agentEntities[3]._key,
       _type: ACCOUNT_AGENT_RELATIONSHIP_TYPE,
     },
   ]);
 });
 
 test("createAgentEntities", () => {
+  const baseAgentEntity = {
+    _key: `threatstack:agent:${agentBase.id}`,
+    _class: AGENT_ENTITY_CLASS,
+    _type: AGENT_ENTITY_TYPE,
+    displayName: agentBase.name,
+    id: agentBase.id,
+    instanceId: agentBase.instanceId,
+    status: agentBase.status,
+    active: true,
+    version: agentBase.version,
+    name: agentBase.name,
+    description: agentBase.description,
+    hostname: normalizeHostname(agents[0].hostname),
+    ipAddresses: [],
+    agentType: agentBase.agentType,
+    kernel: agentBase.kernel,
+    osVersion: agentBase.osVersion,
+    createdAt: getTime(agentBase.createdAt),
+    lastReportedAt: getTime(agentBase.lastReportedAt),
+    createdOn: getTime(agentBase.createdAt),
+    function: ["FIM", "activity-monitor", "vulnerability-scan"],
+  };
   expect(createAgentEntities(agents)).toEqual([
+    baseAgentEntity,
     {
-      _key: `threatstack:agent:${agent.id}`,
-      _class: AGENT_ENTITY_CLASS,
-      _type: AGENT_ENTITY_TYPE,
-      displayName: agent.name,
-      id: agent.id,
-      instanceId: agent.instanceId,
-      status: agent.status,
-      active: true,
-      version: agent.version,
-      name: agent.name,
-      description: agent.description,
-      hostname: normalizeHostname(agent.hostname),
+      ...baseAgentEntity,
+      _key: `threatstack:agent:${agentWithoutName.id}`,
+      id: agentWithoutName.id,
+      displayName: agentWithoutName.hostname,
+      name: undefined,
+    },
+    {
+      ...baseAgentEntity,
+      _key: `threatstack:agent:${agentWithIp.id}`,
+      id: agentWithIp.id,
       ipAddresses: ["34.195.165.153", "10.50.140.117"],
       publicIpAddress: ["34.195.165.153"],
       privateIpAddress: ["10.50.140.117"],
       macAddress: ["fe80::4d8:28ff:feed:7692"],
-      agentType: agent.agentType,
-      kernel: agent.kernel,
-      osVersion: agent.osVersion,
-      createdAt: getTime(agent.createdAt),
-      lastReportedAt: getTime(agent.lastReportedAt),
-      createdOn: getTime(agent.createdAt),
-      function: ["FIM", "activity-monitor", "vulnerability-scan"],
+    },
+    {
+      ...baseAgentEntity,
+      _key: `threatstack:agent:${agentWithTags.id}`,
+      id: agentWithTags.id,
     },
   ]);
 });

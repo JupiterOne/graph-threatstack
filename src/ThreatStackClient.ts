@@ -16,14 +16,9 @@ import {
 import * as axiosUtil from "./util/axios-util";
 
 interface Page<T> {
-  latestTime: number;
-  success: boolean;
-  message: string;
-  totalResults: number;
-  elapsed: number;
-  start?: number;
-  rows?: number;
-  results: T[];
+  token: string;
+  agents?: T[];
+  cves?: T[];
 }
 
 interface HawkHeaderOptions {
@@ -93,20 +88,9 @@ export default class ThreatStackClient {
 
     this.options = headerOptions;
 
-    const selfTestUrl = "/help/hawk/self-test";
-    const authorizationHeader = Hawk.client.header(
-      `${this.BASE_API_URL}/${selfTestUrl}`,
-      "GET",
-      headerOptions,
-    );
-
     this.axiosInstance = axiosUtil.createInstance(
       {
         baseURL: this.BASE_API_URL,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: authorizationHeader.header,
-        },
       },
       logger,
     );
@@ -155,16 +139,11 @@ export default class ThreatStackClient {
       : `${this.BASE_API_URL}/${firstUri}`;
 
     while (nextPageUrl) {
-      const authorizationHeader = Hawk.client.header(
-        `${this.BASE_API_URL}/${nextPageUrl}`,
-        "GET",
-        this.options,
-      );
+      const { header } = Hawk.client.header(nextPageUrl, "GET", this.options);
       const response = await this.axiosInstance.get<Page<T>>(nextPageUrl, {
-        baseURL: this.BASE_API_URL,
         headers: {
           "Content-Type": "application/json",
-          Authorization: authorizationHeader.header,
+          Authorization: header,
         },
       });
 
@@ -181,7 +160,7 @@ export default class ThreatStackClient {
     const results: T[] = [];
 
     await this.forEachPage<T>(firstUri, params, (page: Page<T>) => {
-      for (const item of page.results) {
+      for (const item of page.agents || []) {
         results.push(item);
       }
     });

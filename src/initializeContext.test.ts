@@ -7,6 +7,7 @@ test("creates provider client", () => {
       config: {
         userId: "testUser",
         orgId: "testOrg",
+        orgName: "testOrg",
         apiKey: "testKey",
       },
     },
