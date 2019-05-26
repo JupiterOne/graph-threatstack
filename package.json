@@ -2,9 +2,16 @@
   "name": "@jupiterone/jupiter-integration-threatstack",
   "version": "0.1.1",
   "description": "JupiterOne managed integration for Threat Stack.",
-  "main": "index.js",
+  "main": "dist/index.js",
   "repository": "https://github.com/jupiterone/jupiter-integration-threatstack",
   "license": "SEE LICENSE IN LICENSE",
+  "files": [
+    "LICENSE",
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "start": "ts-node --require dotenv/config tools/execute.ts | bunyan",
     "start:graph": "docker run -d --rm --name jupiterone-local-graph -p 8182:8182 tinkerpop/gremlin-server:3.3",
