@@ -15,7 +15,7 @@ test("should throw error if configuration is not found", async () => {
   });
 
   await expect(invocationValidator(executionContext)).rejects.toThrow(
-    `Threat Stack configuration not found (accountId=${accountId})`,
+    `configuration not found`,
   );
 });
 

@@ -1,23 +1,18 @@
 import {
-  IntegrationExecutionContext,
   IntegrationInstanceConfigError,
-  IntegrationInvocationEvent,
+  IntegrationValidationContext,
 } from "@jupiterone/jupiter-managed-integration-sdk";
-import { ThreatStackIntegrationConfig } from "./types";
 
 export default async function invocationValidator(
-  context: IntegrationExecutionContext<IntegrationInvocationEvent>,
+  context: IntegrationValidationContext,
 ) {
-  const { accountId, config } = context.instance;
-  const instanceConfig = config as ThreatStackIntegrationConfig;
+  const { config } = context.instance;
 
-  if (!instanceConfig) {
-    throw new IntegrationInstanceConfigError(
-      `Threat Stack configuration not found (accountId=${accountId})`,
-    );
+  if (!config) {
+    throw new IntegrationInstanceConfigError("configuration not found");
   }
 
-  const { apiKey, orgId, orgName, userId } = instanceConfig;
+  const { apiKey, orgId, orgName, userId } = config;
 
   if (!(orgId && orgName && userId && apiKey)) {
     throw new IntegrationInstanceConfigError(
