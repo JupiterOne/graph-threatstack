@@ -2,7 +2,6 @@ import {
   EntityFromIntegration,
   GraphClient,
   IntegrationExecutionContext,
-  IntegrationInvocationEvent,
   PersisterClient,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
@@ -26,7 +25,7 @@ export interface ThreatStackIntegrationConfig {
 }
 
 export interface ThreatStackExecutionContext
-  extends IntegrationExecutionContext<IntegrationInvocationEvent> {
+  extends IntegrationExecutionContext {
   graph: GraphClient;
   persister: PersisterClient;
   provider: ThreatStackClient;
