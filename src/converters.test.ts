@@ -1,5 +1,15 @@
-import { createAccountRelationships, createAgentEntities } from "./converters";
-import { ThreatStackAgent } from "./ThreatStackClient";
+import { RelationshipDirection } from "@jupiterone/jupiter-managed-integration-sdk";
+
+import {
+  createAccountRelationships,
+  createAgentEntities,
+  createAgentFindingMappedRelationship,
+  createCVEEntities,
+} from "./converters";
+import {
+  ThreatStackAgent,
+  ThreatStackVulnerability,
+} from "./ThreatStackClient";
 import {
   ACCOUNT_AGENT_RELATIONSHIP_TYPE,
   ACCOUNT_ENTITY_CLASS,
@@ -21,7 +31,6 @@ export const accountEntity: ThreatStackAccountEntity = {
 
 export const agentBase: ThreatStackAgent = {
   id: "8b0f0b28-7fce-11e9-a123-99cdd68cb066",
-  instanceId: "i-0d0f1f32bea26a881",
   status: "online",
   createdAt: "2019-05-26T15:54:28.452Z",
   lastReportedAt: "2019-05-26T16:04:48.376Z",
@@ -43,6 +52,7 @@ export const agentWithoutName: ThreatStackAgent = {
 export const agentWithIp: ThreatStackAgent = {
   ...agentBase,
   id: "8b0f0b28-7fce-11e9-a123-99cdd68cb068",
+  instanceId: "i-0d0f1f32bea26a881",
   ipAddresses: {
     private: ["10.50.140.117"],
     link_local: ["fe80::4d8:28ff:feed:7692"],
@@ -53,6 +63,7 @@ export const agentWithIp: ThreatStackAgent = {
 export const agentWithTags: ThreatStackAgent = {
   ...agentBase,
   id: "8b0f0b28-7fce-11e9-a123-99cdd68cb069",
+  instanceId: "i-0d0f1f32bea26a881",
   tags: [
     {
       source: "ec2",
@@ -88,6 +99,40 @@ export const agents: ThreatStackAgent[] = [
   agentWithTags,
 ];
 
+export const cves: ThreatStackVulnerability[] = [
+  {
+    cveNumber: "CVE-2018-19932",
+    reportedPackage: "binutils 2.25.1",
+    systemPackage: "binutils 2.25.1-31.base.66.amzn1.x86_64",
+    vectorType: "network",
+    severity: "medium",
+    isSuppressed: false,
+  },
+  {
+    cveNumber: "CVE-2018-1000876",
+    reportedPackage: "binutils 2.25.1",
+    systemPackage: "binutils 2.25.1-31.base.66.amzn1.x86_64",
+    vectorType: "local",
+    severity: "medium",
+    isSuppressed: false,
+  },
+];
+
+export const vulnerableServers = [
+  {
+    agentId: "8b0f0b28-7fce-11e9-a123-99cdd68cb066",
+  },
+  {
+    agentId: "8b0f0b28-7fce-11e9-a123-99cdd68cb067",
+  },
+  {
+    agentId: "8b0f0b28-7fce-11e9-a123-99cdd68cb068",
+  },
+  {
+    agentId: "8b0f0b28-7fce-11e9-a123-99cdd68cb069",
+  },
+];
+
 test("createAccountRelationships", () => {
   const agentEntities = createAgentEntities(agents);
 
@@ -101,30 +146,34 @@ test("createAccountRelationships", () => {
     {
       _class: "HAS",
       _fromEntityKey: accountEntity._key,
-      _key: `${accountEntity._key}_has_${agentEntities[0]._key}`,
+      _key: `${accountEntity._key}|has|${agentEntities[0]._key}`,
       _toEntityKey: agentEntities[0]._key,
       _type: ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+      displayName: "HAS",
     },
     {
       _class: "HAS",
       _fromEntityKey: accountEntity._key,
-      _key: `${accountEntity._key}_has_${agentEntities[1]._key}`,
+      _key: `${accountEntity._key}|has|${agentEntities[1]._key}`,
       _toEntityKey: agentEntities[1]._key,
       _type: ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+      displayName: "HAS",
     },
     {
       _class: "HAS",
       _fromEntityKey: accountEntity._key,
-      _key: `${accountEntity._key}_has_${agentEntities[2]._key}`,
+      _key: `${accountEntity._key}|has|${agentEntities[2]._key}`,
       _toEntityKey: agentEntities[2]._key,
       _type: ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+      displayName: "HAS",
     },
     {
       _class: "HAS",
       _fromEntityKey: accountEntity._key,
-      _key: `${accountEntity._key}_has_${agentEntities[3]._key}`,
+      _key: `${accountEntity._key}|has|${agentEntities[3]._key}`,
       _toEntityKey: agentEntities[3]._key,
       _type: ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+      displayName: "HAS",
     },
   ]);
 });
@@ -136,7 +185,6 @@ test("createAgentEntities", () => {
     _type: AGENT_ENTITY_TYPE,
     displayName: agentBase.name,
     id: agentBase.id,
-    instanceId: agentBase.instanceId,
     status: agentBase.status,
     active: true,
     version: agentBase.version,
@@ -164,6 +212,7 @@ test("createAgentEntities", () => {
     {
       ...baseAgentEntity,
       _key: `threatstack:agent:${agentWithIp.id}`,
+      instanceId: "i-0d0f1f32bea26a881",
       id: agentWithIp.id,
       ipAddresses: ["34.195.165.153", "10.50.140.117"],
       publicIpAddress: ["34.195.165.153"],
@@ -173,7 +222,60 @@ test("createAgentEntities", () => {
     {
       ...baseAgentEntity,
       _key: `threatstack:agent:${agentWithTags.id}`,
+      instanceId: "i-0d0f1f32bea26a881",
       id: agentWithTags.id,
     },
   ]);
+});
+
+test("createCVEEntities", () => {
+  expect(createCVEEntities(cves)).toEqual([
+    {
+      _class: "Vulnerability",
+      _key: "cve-2018-19932",
+      _type: "cve",
+      name: "CVE-2018-19932",
+      displayName: "CVE-2018-19932",
+      webLink: "https://nvd.nist.gov/vuln/detail/CVE-2018-19932",
+      open: true,
+      suppressed: false,
+      package: "binutils 2.25.1",
+      severity: "medium",
+      vector: "network",
+      finding: "binutils 2.25.1-31.base.66.amzn1.x86_64",
+    },
+    {
+      _class: "Vulnerability",
+      _key: "cve-2018-1000876",
+      _type: "cve",
+      name: "CVE-2018-1000876",
+      displayName: "CVE-2018-1000876",
+      webLink: "https://nvd.nist.gov/vuln/detail/CVE-2018-1000876",
+      open: true,
+      suppressed: false,
+      package: "binutils 2.25.1",
+      severity: "medium",
+      vector: "local",
+      finding: "binutils 2.25.1-31.base.66.amzn1.x86_64",
+    },
+  ]);
+});
+
+test("createAgentFindingMappedRelationship", () => {
+  const agent = createAgentEntities(agents)[0];
+  const cve = createCVEEntities(cves)[0];
+  const agentKey = `threatstack:agent:${agentBase.id}`;
+  const cveKey = "cve-2018-19932";
+  expect(createAgentFindingMappedRelationship(agent, cve)).toEqual({
+    _key: `${agentKey}|identified|${cveKey}`,
+    _type: `threatstack_agent_identified_vulnerability`,
+    _class: "IDENTIFIED",
+    displayName: "IDENTIFIED",
+    _mapping: {
+      sourceEntityKey: agentKey,
+      relationshipDirection: RelationshipDirection.FORWARD,
+      targetFilterKeys: [["_type", "_key"]],
+      targetEntity: cve,
+    },
+  });
 });

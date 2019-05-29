@@ -1,16 +1,23 @@
 import {
   EntityFromIntegration,
+  RelationshipDirection,
   RelationshipFromIntegration,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
-import { ThreatStackAgent } from "./ThreatStackClient";
+import {
+  ThreatStackAgent,
+  ThreatStackVulnerability,
+} from "./ThreatStackClient";
 import {
   AGENT_ENTITY_CLASS,
   AGENT_ENTITY_TYPE,
+  AGENT_FINDING_RELATIONSHIP_TYPE,
   PROVIDER_NAME,
   ThreatStackAccountEntity,
   ThreatStackAgentEntity,
+  ThreatStackAgentFindingRelationship,
 } from "./types";
+import getCVE, { CVE } from "./util/getCVE";
 import getTime from "./util/getTime";
 import { normalizeHostname } from "./util/normalizeHostname";
 
@@ -84,8 +91,46 @@ export function createAccountRelationship(
   return {
     _class: "HAS",
     _fromEntityKey: account._key,
-    _key: `${account._key}_has_${entity._key}`,
+    _key: `${account._key}|has|${entity._key}`,
     _toEntityKey: entity._key,
     _type: type,
+    displayName: "HAS",
+  };
+}
+
+export function createCVEEntities(data: ThreatStackVulnerability[]): CVE[] {
+  return data.map(d =>
+    getCVE(d.cveNumber, {
+      open: !d.isSuppressed,
+      suppressed: d.isSuppressed,
+      package: d.reportedPackage,
+      severity: d.severity,
+      vector: d.vectorType,
+      finding: d.systemPackage,
+    }),
+  );
+}
+
+export function createAgentFindingMappedRelationship(
+  agent: ThreatStackAgentEntity,
+  cve: CVE,
+  finding?: string,
+  suppressed?: boolean,
+): ThreatStackAgentFindingRelationship {
+  return {
+    _key: `${agent._key}|identified|${cve._key}`,
+    _type: AGENT_FINDING_RELATIONSHIP_TYPE,
+    _class: "IDENTIFIED",
+    displayName: "IDENTIFIED",
+    finding,
+    suppressed,
+    _mapping: {
+      sourceEntityKey: agent._key,
+      relationshipDirection: RelationshipDirection.FORWARD,
+      targetFilterKeys: [["_type", "_key"]],
+      targetEntity: {
+        ...cve,
+      },
+    },
   };
 }

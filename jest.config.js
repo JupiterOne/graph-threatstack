@@ -7,7 +7,6 @@ module.exports = {
     "src/**/*.ts",
     "!src/index.ts",
     "!src/ThreatStackClient.ts",
-    "!src/util/axios-util.ts",
     "!src/util/*",
   ],
   moduleFileExtensions: ["ts", "js"],

@@ -2,7 +2,9 @@ import * as axios from "axios";
 
 import * as Hawk from "@hapi/hawk";
 import {
+  IntegrationError,
   IntegrationInstanceAuthenticationError,
+  IntegrationInstanceAuthorizationError,
   IntegrationLogger,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
@@ -19,6 +21,7 @@ interface Page<T> {
   token: string;
   agents?: T[];
   cves?: T[];
+  servers?: T[];
 }
 
 interface HawkHeaderOptions {
@@ -60,6 +63,20 @@ export interface ThreatStackAgent {
   osVersion?: string | null;
 }
 
+export interface ThreatStackVulnerability {
+  cveNumber: string;
+  reportedPackage: string;
+  systemPackage: string;
+  vectorType: string;
+  severity: string;
+  isSuppressed: boolean;
+}
+
+export interface ThreatStackVulnerableServer {
+  agentId: string;
+  hostname?: string | null;
+}
+
 export default class ThreatStackClient {
   private axiosInstance: axios.AxiosInstance;
   private BASE_API_URL: string;
@@ -67,12 +84,14 @@ export default class ThreatStackClient {
   private options: HawkHeaderOptions;
   private orgName: string;
   private orgId: string;
+  private provider: string;
 
   constructor(config: ThreatStackIntegrationConfig, logger: IntegrationLogger) {
     this.BASE_API_URL = `https://api.threatstack.com/v2`;
     this.logger = logger;
     this.orgId = config.orgId;
     this.orgName = config.orgName;
+    this.provider = "Threat Stack";
 
     const credentials = {
       id: config.userId,
@@ -103,26 +122,32 @@ export default class ThreatStackClient {
       _class: ACCOUNT_ENTITY_CLASS,
       accountId: this.orgId,
       name: this.orgName,
+      displayName: `Threat Stack - ${this.orgName}`,
     };
   }
 
   public async getServerAgents(status: string): Promise<ThreatStackAgent[]> {
-    try {
-      this.logger.trace("Fetching Threat Stack server agents...");
-      const result = await this.collectAllPages<ThreatStackAgent>(
-        "agents",
-        `status=${status}`,
-      );
-      this.logger.trace({}, "Fetched Threat Stack server agents");
-      return result;
-    } catch (err) {
-      const code = err.response.status;
-      if (code === 401 || code === 403) {
-        throw new IntegrationInstanceAuthenticationError(err);
-      } else {
-        throw new Error("Unable to retrieve Threat Stack server agents");
-      }
-    }
+    return await this.collectAllPages<ThreatStackAgent>(
+      "agents",
+      `status=${status}`,
+    );
+  }
+
+  public async getVulnerabilities(
+    status?: string,
+  ): Promise<ThreatStackVulnerability[]> {
+    return await this.collectAllPages<ThreatStackVulnerability>(
+      "vulnerabilities",
+      status ? `status=${status}` : undefined,
+    );
+  }
+
+  public async getVulnerableServers(
+    cve: string,
+  ): Promise<ThreatStackVulnerableServer[]> {
+    return await this.collectAllPages<ThreatStackVulnerableServer>(
+      `vulnerabilities/${cve}/servers`,
+    );
   }
 
   private async forEachPage<T>(
@@ -157,14 +182,39 @@ export default class ThreatStackClient {
     firstUri: string,
     params?: string,
   ): Promise<T[]> {
-    const results: T[] = [];
-
-    await this.forEachPage<T>(firstUri, params, (page: Page<T>) => {
-      for (const item of page.agents || []) {
-        results.push(item);
+    try {
+      const results: T[] = [];
+      const key = firstUri.includes("servers")
+        ? "servers"
+        : firstUri.includes("vulnerabilities")
+        ? "cves"
+        : "agents";
+      this.logger.trace(`Fetching ${this.provider} ${firstUri}...`);
+      await this.forEachPage<T>(firstUri, params, (page: Page<T>) => {
+        for (const item of page[key] || []) {
+          results.push(item);
+        }
+      });
+      this.logger.trace(`Fetched ${this.provider} ${firstUri}`);
+      return results;
+    } catch (err) {
+      const code = err.response.status;
+      if (code === 401) {
+        throw new IntegrationInstanceAuthenticationError(err);
+      } else if (code === 403) {
+        throw new IntegrationInstanceAuthorizationError(err, firstUri);
+      } else if (code === 500) {
+        this.logger.warn(
+          `Server error from ${this.provider} while retrieving ${firstUri}`,
+        );
+        return [];
+      } else {
+        throw new IntegrationError({
+          cause: err,
+          expose: false,
+          message: `Unable to retrieve ${this.BASE_API_URL}/${firstUri}`,
+        });
       }
-    });
-
-    return results;
+    }
   }
 }

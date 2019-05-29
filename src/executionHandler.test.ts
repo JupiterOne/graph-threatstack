@@ -1,6 +1,11 @@
 import { IntegrationExecutionContext } from "@jupiterone/jupiter-managed-integration-sdk";
 
-import { accountEntity, agents } from "./converters.test";
+import {
+  accountEntity,
+  agents,
+  cves,
+  vulnerableServers,
+} from "./converters.test";
 import executionHandler from "./executionHandler";
 import initializeContext from "./initializeContext";
 import {
@@ -27,6 +32,8 @@ test("executionHandler", async () => {
     provider: {
       getAccountDetails: jest.fn().mockResolvedValue(accountEntity),
       getServerAgents: jest.fn().mockResolvedValue(agents),
+      getVulnerabilities: jest.fn().mockResolvedValue(cves),
+      getVulnerableServers: jest.fn().mockResolvedValue(vulnerableServers),
     },
   };
 
@@ -53,9 +60,9 @@ test("executionHandler", async () => {
   // account, agents
   expect(executionContext.persister.processEntities).toHaveBeenCalledTimes(2);
 
-  // account -HAS-> sensors
+  // account -HAS-> agents; agent -IDENTIFIED-> cve
   expect(executionContext.persister.processRelationships).toHaveBeenCalledTimes(
-    1,
+    2,
   );
   expect(
     executionContext.persister.publishPersisterOperations,

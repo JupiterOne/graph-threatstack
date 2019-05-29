@@ -2,6 +2,7 @@ import {
   EntityFromIntegration,
   GraphClient,
   IntegrationExecutionContext,
+  MappedRelationshipFromIntegration,
   PersisterClient,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
@@ -14,8 +15,12 @@ export const ACCOUNT_ENTITY_CLASS = "Account";
 
 export const AGENT_ENTITY_TYPE = "threatstack_agent";
 export const AGENT_ENTITY_CLASS = "HostAgent";
+
 export const ACCOUNT_AGENT_RELATIONSHIP_TYPE =
   ACCOUNT_ENTITY_TYPE + "_has_agent";
+
+export const AGENT_FINDING_RELATIONSHIP_TYPE =
+  PROVIDER_NAME + "_agent_identified_vulnerability";
 
 export interface ThreatStackIntegrationConfig {
   apiKey: string;
@@ -57,4 +62,10 @@ export interface ThreatStackAgentEntity extends EntityFromIntegration {
   createdOn?: number;
   updatedOn?: number;
   function?: string[];
+}
+
+export interface ThreatStackAgentFindingRelationship
+  extends MappedRelationshipFromIntegration {
+  finding?: string;
+  suppressed?: boolean;
 }
