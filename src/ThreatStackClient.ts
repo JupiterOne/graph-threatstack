@@ -1,4 +1,5 @@
 import * as axios from "axios";
+import { throttleAdapterEnhancer } from "axios-extensions";
 
 import * as Hawk from "@hapi/hawk";
 import {
@@ -110,6 +111,10 @@ export default class ThreatStackClient {
     this.axiosInstance = axiosUtil.createInstance(
       {
         baseURL: this.BASE_API_URL,
+        adapter: throttleAdapterEnhancer(
+          axios.default.defaults.adapter as axios.AxiosAdapter,
+          { threshold: 2 * 1000 },
+        ),
       },
       logger,
     );
@@ -126,7 +131,9 @@ export default class ThreatStackClient {
     };
   }
 
-  public async getServerAgents(status: string): Promise<ThreatStackAgent[]> {
+  public async getServerAgents(
+    status: string,
+  ): Promise<ThreatStackAgent[] | undefined> {
     return await this.collectAllPages<ThreatStackAgent>(
       "agents",
       `status=${status}`,
@@ -135,7 +142,7 @@ export default class ThreatStackClient {
 
   public async getVulnerabilities(
     status?: string,
-  ): Promise<ThreatStackVulnerability[]> {
+  ): Promise<ThreatStackVulnerability[] | undefined> {
     return await this.collectAllPages<ThreatStackVulnerability>(
       "vulnerabilities",
       status ? `status=${status}` : undefined,
@@ -144,7 +151,7 @@ export default class ThreatStackClient {
 
   public async getVulnerableServers(
     cve: string,
-  ): Promise<ThreatStackVulnerableServer[]> {
+  ): Promise<ThreatStackVulnerableServer[] | undefined> {
     return await this.collectAllPages<ThreatStackVulnerableServer>(
       `vulnerabilities/${cve}/servers`,
     );
@@ -181,7 +188,7 @@ export default class ThreatStackClient {
   private async collectAllPages<T>(
     firstUri: string,
     params?: string,
-  ): Promise<T[]> {
+  ): Promise<T[] | undefined> {
     try {
       const results: T[] = [];
       const key = firstUri.includes("servers")
@@ -207,7 +214,7 @@ export default class ThreatStackClient {
         this.logger.warn(
           `Server error from ${this.provider} while retrieving ${firstUri}`,
         );
-        return [];
+        return undefined;
       } else {
         throw new IntegrationError({
           cause: err,

@@ -1,4 +1,6 @@
 import Axios, * as axios from "axios";
+import axiosRetry from "axios-retry";
+
 // import * as axios from 'axios';
 // import Axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
@@ -40,6 +42,13 @@ export function createInstance(
   logger: IntegrationLogger,
 ) {
   const instance = Axios.create(instanceConfig);
+
+  axiosRetry(instance, {
+    retries: 10,
+    retryDelay: retryCount => {
+      return retryCount * 1000;
+    },
+  });
 
   instance.interceptors.request.use(
     (config: axios.AxiosRequestConfig) => {

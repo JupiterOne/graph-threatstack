@@ -42,30 +42,33 @@ export default async function executionHandler(
     provider.getVulnerabilities(),
   ]);
 
-  const newAgentEntities = [
-    ...createAgentEntities(onlineAgents),
-    ...createAgentEntities(offlineAgents),
-  ];
+  const newAgentEntities =
+    onlineAgents && offlineAgents
+      ? [
+          ...createAgentEntities(onlineAgents),
+          ...createAgentEntities(offlineAgents),
+        ]
+      : undefined;
 
   const accountEntity = provider.getAccountDetails();
 
-  const newAccountAgentRelationships = createAccountRelationships(
-    accountEntity,
-    newAgentEntities,
-    ACCOUNT_AGENT_RELATIONSHIP_TYPE,
-  );
+  const newAccountAgentRelationships = newAgentEntities
+    ? createAccountRelationships(
+        accountEntity,
+        newAgentEntities,
+        ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+      )
+    : undefined;
 
   const agentsById: { [id: string]: ThreatStackAgentEntity } = {};
-  for (const agent of newAgentEntities) {
+  for (const agent of newAgentEntities || []) {
     agentsById[agent.id] = agent;
   }
 
   const newVulnerabilityRelationships = [];
 
-  for (const vuln of vulnerabilities) {
+  for (const vuln of vulnerabilities || []) {
     const cve = getCVE(vuln.cveNumber, {
-      open: !vuln.isSuppressed,
-      suppressed: vuln.isSuppressed,
       package: vuln.reportedPackage,
       severity: vuln.severity,
       vector: vuln.vectorType,
@@ -75,7 +78,7 @@ export default async function executionHandler(
     const vulnerableServers = await provider.getVulnerableServers(
       vuln.cveNumber,
     );
-    for (const server of vulnerableServers) {
+    for (const server of vulnerableServers || []) {
       const agent = agentsById[server.agentId];
       if (agent) {
         if (agent.instanceId) {
@@ -99,17 +102,23 @@ export default async function executionHandler(
     operations: await persister.publishPersisterOperations([
       [
         ...persister.processEntities(oldAccountEntities, [accountEntity]),
-        ...persister.processEntities(oldAgentEntities, newAgentEntities),
+        ...(newAgentEntities
+          ? persister.processEntities(oldAgentEntities, newAgentEntities)
+          : []),
       ],
       [
-        ...persister.processRelationships(
-          oldAccountAgentRelationships,
-          newAccountAgentRelationships,
-        ),
-        ...persister.processRelationships(
-          oldVulnerabilityRelationships,
-          newVulnerabilityRelationships,
-        ),
+        ...(newAccountAgentRelationships
+          ? persister.processRelationships(
+              oldAccountAgentRelationships,
+              newAccountAgentRelationships,
+            )
+          : []),
+        ...(vulnerabilities
+          ? persister.processRelationships(
+              oldVulnerabilityRelationships,
+              newVulnerabilityRelationships,
+            )
+          : []),
       ],
     ]),
   };
