@@ -3,8 +3,6 @@ import { PersistedObjectAssignable } from "@jupiterone/jupiter-managed-integrati
 const cveLink = "https://nvd.nist.gov/vuln/detail/";
 
 export interface CVEProperties {
-  open?: boolean;
-  suppressed?: boolean;
   severity?: string;
   vendor?: string;
   package?: string;

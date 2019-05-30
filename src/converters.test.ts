@@ -4,7 +4,6 @@ import {
   createAccountRelationships,
   createAgentEntities,
   createAgentFindingMappedRelationship,
-  createCVEEntities,
 } from "./converters";
 import {
   ThreatStackAgent,
@@ -18,6 +17,7 @@ import {
   AGENT_ENTITY_TYPE,
   ThreatStackAccountEntity,
 } from "./types";
+import getCVE from "./util/getCVE";
 import getTime from "./util/getTime";
 import { normalizeHostname } from "./util/normalizeHostname";
 
@@ -228,42 +228,9 @@ test("createAgentEntities", () => {
   ]);
 });
 
-test("createCVEEntities", () => {
-  expect(createCVEEntities(cves)).toEqual([
-    {
-      _class: "Vulnerability",
-      _key: "cve-2018-19932",
-      _type: "cve",
-      name: "CVE-2018-19932",
-      displayName: "CVE-2018-19932",
-      webLink: "https://nvd.nist.gov/vuln/detail/CVE-2018-19932",
-      open: true,
-      suppressed: false,
-      package: "binutils 2.25.1",
-      severity: "medium",
-      vector: "network",
-      finding: "binutils 2.25.1-31.base.66.amzn1.x86_64",
-    },
-    {
-      _class: "Vulnerability",
-      _key: "cve-2018-1000876",
-      _type: "cve",
-      name: "CVE-2018-1000876",
-      displayName: "CVE-2018-1000876",
-      webLink: "https://nvd.nist.gov/vuln/detail/CVE-2018-1000876",
-      open: true,
-      suppressed: false,
-      package: "binutils 2.25.1",
-      severity: "medium",
-      vector: "local",
-      finding: "binutils 2.25.1-31.base.66.amzn1.x86_64",
-    },
-  ]);
-});
-
 test("createAgentFindingMappedRelationship", () => {
   const agent = createAgentEntities(agents)[0];
-  const cve = createCVEEntities(cves)[0];
+  const cve = getCVE(cves[0].cveNumber, cves[0]);
   const agentKey = `threatstack:agent:${agentBase.id}`;
   const cveKey = "cve-2018-19932";
   expect(createAgentFindingMappedRelationship(agent, cve)).toEqual({
