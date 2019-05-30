@@ -69,7 +69,7 @@ test("executionHandler", async () => {
   ).toHaveBeenCalledTimes(1);
 });
 
-test("should handle undefined vulnerable servers", async () => {
+test("should handle undefined agents and vulnerabilities", async () => {
   const executionContext: any = {
     graph: {
       findAllEntitiesByType: jest.fn().mockResolvedValue([]),
@@ -121,7 +121,7 @@ test("should handle undefined vulnerable servers", async () => {
   ).toHaveBeenCalledTimes(1);
 });
 
-test("executionHandler", async () => {
+test("should handle undefined vulnerable servers", async () => {
   const executionContext: any = {
     graph: {
       findAllEntitiesByType: jest.fn().mockResolvedValue([]),
