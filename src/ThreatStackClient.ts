@@ -191,8 +191,10 @@ export default class ThreatStackClient {
           return page.token ? `${pagePrefix}token=${page.token}` : null;
         },
         {
+          initialDelay: 1000,
           delay: 5000,
-          factor: 1.1,
+          factor: 1.2,
+          maxAttempts: 15,
           handleError(err: Error, context: AttemptContext) {
             const axiosErr = err as axios.AxiosError;
             if (axiosErr.response) {
@@ -232,7 +234,7 @@ export default class ThreatStackClient {
         throw new IntegrationInstanceAuthenticationError(err);
       } else if (code === 403) {
         throw new IntegrationInstanceAuthorizationError(err, firstUri);
-      } else if (code === 500) {
+      } else if (code === 500 || code === 429) {
         this.logger.warn(
           { err },
           `Server error from ${this.provider} while retrieving ${firstUri}`,
