@@ -72,7 +72,7 @@ export default async function executionHandler(
       package: vuln.reportedPackage,
       severity: vuln.severity,
       vector: vuln.vectorType,
-      finding: vuln.systemPackage,
+      findings: vuln.systemPackage,
     });
     cve.targets = [];
     const vulnerableServers = await provider.getVulnerableServers(

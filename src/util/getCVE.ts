@@ -9,7 +9,7 @@ export interface CVEProperties {
   product?: string;
   version?: string;
   vector?: string;
-  finding?: string;
+  findings?: string | string[];
   CVSSv3Score?: number;
   CVSSv3Vector?: number;
   CVSSv2Score?: number;
