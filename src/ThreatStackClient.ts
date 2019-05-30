@@ -8,6 +8,7 @@ import {
   IntegrationInstanceAuthorizationError,
   IntegrationLogger,
 } from "@jupiterone/jupiter-managed-integration-sdk";
+import { AttemptContext, retry } from "@lifeomic/attempt";
 
 import {
   ACCOUNT_ENTITY_CLASS,
@@ -170,19 +171,40 @@ export default class ThreatStackClient {
       ? `${this.BASE_API_URL}/${firstUri}?${params}`
       : `${this.BASE_API_URL}/${firstUri}`;
 
-    while (nextPageUrl) {
-      const { header } = Hawk.client.header(nextPageUrl, "GET", this.options);
-      const response = await this.axiosInstance.get<Page<T>>(nextPageUrl, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: header,
-        },
-      });
+    do {
+      nextPageUrl = await retry(
+        async () => {
+          const { header } = Hawk.client.header(
+            nextPageUrl,
+            "GET",
+            this.options,
+          );
+          const response = await this.axiosInstance.get<Page<T>>(nextPageUrl!, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: header,
+            },
+          });
 
-      const page: any = response.data;
-      eachFn(page);
-      nextPageUrl = page.token ? `${pagePrefix}token=${page.token}` : null;
-    }
+          const page: any = response.data;
+          eachFn(page);
+          return page.token ? `${pagePrefix}token=${page.token}` : null;
+        },
+        {
+          delay: 5000,
+          factor: 1.1,
+          handleError(err: Error, context: AttemptContext) {
+            const axiosErr = err as axios.AxiosError;
+            if (axiosErr.response) {
+              const code = axiosErr.response.status;
+              if (code !== 429 && code !== 500) {
+                context.abort();
+              }
+            }
+          },
+        },
+      );
+    } while (nextPageUrl);
   }
 
   private async collectAllPages<T>(
@@ -212,6 +234,7 @@ export default class ThreatStackClient {
         throw new IntegrationInstanceAuthorizationError(err, firstUri);
       } else if (code === 500) {
         this.logger.warn(
+          { err },
           `Server error from ${this.provider} while retrieving ${firstUri}`,
         );
         return undefined;

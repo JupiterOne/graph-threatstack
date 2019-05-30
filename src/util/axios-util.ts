@@ -1,5 +1,4 @@
 import Axios, * as axios from "axios";
-import axiosRetry from "axios-retry";
 
 // import * as axios from 'axios';
 // import Axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -43,13 +42,6 @@ export function createInstance(
 ) {
   const instance = Axios.create(instanceConfig);
 
-  axiosRetry(instance, {
-    retries: 10,
-    retryDelay: retryCount => {
-      return retryCount * 1000;
-    },
-  });
-
   instance.interceptors.request.use(
     (config: axios.AxiosRequestConfig) => {
       logger.debug(
@@ -87,8 +79,7 @@ export function createInstance(
     err => {
       logger.error(
         {
-          response: err.response,
-          message: err.message,
+          err: serializeAxiosError(err),
         },
         "axios response error",
       );
