@@ -1,5 +1,6 @@
 import * as axios from "axios";
 import { throttleAdapterEnhancer } from "axios-extensions";
+import PQueue from "p-queue";
 
 import * as Hawk from "@hapi/hawk";
 import {
@@ -9,7 +10,6 @@ import {
   IntegrationLogger,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 import { AttemptContext, retry } from "@lifeomic/attempt";
-
 import {
   ACCOUNT_ENTITY_CLASS,
   ACCOUNT_ENTITY_TYPE,
@@ -87,6 +87,7 @@ export default class ThreatStackClient {
   private orgName: string;
   private orgId: string;
   private provider: string;
+  private requestQueue: PQueue;
 
   constructor(config: ThreatStackIntegrationConfig, logger: IntegrationLogger) {
     this.BASE_API_URL = `https://api.threatstack.com/v2`;
@@ -119,6 +120,11 @@ export default class ThreatStackClient {
       },
       logger,
     );
+
+    this.requestQueue = new PQueue({
+      interval: 60000,
+      intervalCap: 100,
+    });
   }
 
   public getAccountDetails(): ThreatStackAccountEntity {
@@ -172,40 +178,44 @@ export default class ThreatStackClient {
       : `${this.BASE_API_URL}/${firstUri}`;
 
     do {
-      nextPageUrl = await retry(
-        async () => {
-          const { header } = Hawk.client.header(
-            nextPageUrl,
-            "GET",
-            this.options,
-          );
-          const response = await this.axiosInstance.get<Page<T>>(nextPageUrl!, {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: header,
-            },
-          });
+      nextPageUrl = await this.requestQueue.add(async () => {
+        return retry(
+          async () => {
+            const { header } = Hawk.client.header(
+              nextPageUrl,
+              "GET",
+              this.options,
+            );
+            const response = await this.axiosInstance.get<Page<T>>(
+              nextPageUrl!,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: header,
+                },
+              },
+            );
 
-          const page: any = response.data;
-          eachFn(page);
-          return page.token ? `${pagePrefix}token=${page.token}` : null;
-        },
-        {
-          initialDelay: 1000,
-          delay: 5000,
-          factor: 1.2,
-          maxAttempts: 15,
-          handleError(err: Error, context: AttemptContext) {
-            const axiosErr = err as axios.AxiosError;
-            if (axiosErr.response) {
-              const code = axiosErr.response.status;
-              if (code !== 429 && code !== 500) {
-                context.abort();
-              }
-            }
+            const page: any = response.data;
+            eachFn(page);
+            return page.token ? `${pagePrefix}token=${page.token}` : null;
           },
-        },
-      );
+          {
+            delay: 5000,
+            factor: 1.2,
+            maxAttempts: 15,
+            handleError(err: Error, context: AttemptContext) {
+              const axiosErr = err as axios.AxiosError;
+              if (axiosErr.response) {
+                const code = axiosErr.response.status;
+                if (code !== 429 && code !== 500) {
+                  context.abort();
+                }
+              }
+            },
+          },
+        );
+      });
     } while (nextPageUrl);
   }
 
