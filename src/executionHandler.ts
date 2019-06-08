@@ -24,18 +24,6 @@ export default async function executionHandler(
 ): Promise<IntegrationExecutionResult> {
   const { graph, persister, provider } = initializeContext(context);
 
-  const [
-    oldAccountEntities,
-    oldAgentEntities,
-    oldAccountAgentRelationships,
-    oldVulnerabilityRelationships,
-  ] = await Promise.all([
-    graph.findAllEntitiesByType<ThreatStackAccountEntity>(ACCOUNT_ENTITY_TYPE),
-    graph.findEntitiesByType<ThreatStackAgentEntity>(AGENT_ENTITY_TYPE),
-    graph.findRelationshipsByType(ACCOUNT_AGENT_RELATIONSHIP_TYPE),
-    graph.findRelationshipsByType(AGENT_FINDING_RELATIONSHIP_TYPE),
-  ]);
-
   const [onlineAgents, offlineAgents, vulnerabilities] = await Promise.all([
     provider.getServerAgents("online"),
     provider.getServerAgents("offline"),
@@ -97,6 +85,18 @@ export default async function executionHandler(
       }
     }
   }
+
+  const [
+    oldAccountEntities,
+    oldAgentEntities,
+    oldAccountAgentRelationships,
+    oldVulnerabilityRelationships,
+  ] = await Promise.all([
+    graph.findAllEntitiesByType<ThreatStackAccountEntity>(ACCOUNT_ENTITY_TYPE),
+    graph.findEntitiesByType<ThreatStackAgentEntity>(AGENT_ENTITY_TYPE),
+    graph.findRelationshipsByType(ACCOUNT_AGENT_RELATIONSHIP_TYPE),
+    graph.findRelationshipsByType(AGENT_FINDING_RELATIONSHIP_TYPE),
+  ]);
 
   return {
     operations: await persister.publishPersisterOperations([
