@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@hapi/hawk": "^7.1.0",
+    "@lifeomic/attempt": "^3.0.0",
     "@types/request-promise": "^4.1.44",
     "@types/request-promise-native": "^1.0.16",
     "axios": "^0.18.0",
