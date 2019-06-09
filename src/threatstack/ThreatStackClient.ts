@@ -10,14 +10,14 @@ import {
   IntegrationLogger,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 import { AttemptContext, retry } from "@lifeomic/attempt";
+
+import { ThreatStackIntegrationConfig } from "../types";
+import * as axiosUtil from "../util/axios-util";
 import {
-  ACCOUNT_ENTITY_CLASS,
-  ACCOUNT_ENTITY_TYPE,
-  PROVIDER_NAME,
-  ThreatStackAccountEntity,
-  ThreatStackIntegrationConfig,
+  ThreatStackAgent,
+  ThreatStackVulnerability,
+  ThreatStackVulnerableServer,
 } from "./types";
-import * as axiosUtil from "./util/axios-util";
 
 interface Page<T> {
   token: string;
@@ -36,64 +36,17 @@ interface HawkHeaderOptions {
   contentType: string;
 }
 
-export interface ThreatStackAgentIpAddresses {
-  private: string | string[];
-  link_local: string | string[];
-  public: string | string[];
-}
-
-export interface ThreatStackAgentTags {
-  source?: string | null;
-  key?: string | null;
-  value?: string | null;
-}
-
-export interface ThreatStackAgent {
-  id: string;
-  instanceId?: string | null;
-  status: string;
-  createdAt: string;
-  lastReportedAt: string;
-  version: string;
-  name?: string | null;
-  description?: string | null;
-  hostname: string;
-  ipAddresses?: ThreatStackAgentIpAddresses | null;
-  tags?: ThreatStackAgentTags[] | null;
-  agentType: string;
-  kernel?: string | null;
-  osVersion?: string | null;
-}
-
-export interface ThreatStackVulnerability {
-  cveNumber: string;
-  reportedPackage: string;
-  systemPackage: string;
-  vectorType: string;
-  severity: string;
-  isSuppressed: boolean;
-}
-
-export interface ThreatStackVulnerableServer {
-  agentId: string;
-  hostname?: string | null;
-}
-
 export default class ThreatStackClient {
   private axiosInstance: axios.AxiosInstance;
   private BASE_API_URL: string;
   private logger: IntegrationLogger;
   private options: HawkHeaderOptions;
-  private orgName: string;
-  private orgId: string;
   private provider: string;
   private requestQueue: PQueue;
 
   constructor(config: ThreatStackIntegrationConfig, logger: IntegrationLogger) {
     this.BASE_API_URL = `https://api.threatstack.com/v2`;
     this.logger = logger;
-    this.orgId = config.orgId;
-    this.orgName = config.orgName;
     this.provider = "Threat Stack";
 
     const credentials = {
@@ -125,17 +78,6 @@ export default class ThreatStackClient {
       interval: 60000,
       intervalCap: 100,
     });
-  }
-
-  public getAccountDetails(): ThreatStackAccountEntity {
-    return {
-      _key: `${PROVIDER_NAME}:account:${this.orgId}`,
-      _type: ACCOUNT_ENTITY_TYPE,
-      _class: ACCOUNT_ENTITY_CLASS,
-      accountId: this.orgId,
-      name: this.orgName,
-      displayName: `Threat Stack - ${this.orgName}`,
-    };
   }
 
   public async getServerAgents(

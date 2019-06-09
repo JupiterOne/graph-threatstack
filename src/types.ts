@@ -6,8 +6,6 @@ import {
   PersisterClient,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
-import ThreatStackClient from "./ThreatStackClient";
-
 export const PROVIDER_NAME = "threatstack";
 
 export const ACCOUNT_ENTITY_TYPE = PROVIDER_NAME + "_account";
@@ -33,7 +31,6 @@ export interface ThreatStackExecutionContext
   extends IntegrationExecutionContext {
   graph: GraphClient;
   persister: PersisterClient;
-  provider: ThreatStackClient;
 }
 
 export interface ThreatStackAccountEntity extends EntityFromIntegration {

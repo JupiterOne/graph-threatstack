@@ -4,8 +4,10 @@ import {
   RelationshipFromIntegration,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
-import { ThreatStackAgent } from "./ThreatStackClient";
+import { ThreatStackAgent } from "./threatstack/types";
 import {
+  ACCOUNT_ENTITY_CLASS,
+  ACCOUNT_ENTITY_TYPE,
   AGENT_ENTITY_CLASS,
   AGENT_ENTITY_TYPE,
   AGENT_FINDING_RELATIONSHIP_TYPE,
@@ -13,10 +15,24 @@ import {
   ThreatStackAccountEntity,
   ThreatStackAgentEntity,
   ThreatStackAgentFindingRelationship,
+  ThreatStackIntegrationConfig,
 } from "./types";
 import { CVE } from "./util/getCVE";
 import getTime from "./util/getTime";
 import { normalizeHostname } from "./util/normalizeHostname";
+
+export function createAccountEntity(
+  data: ThreatStackIntegrationConfig,
+): ThreatStackAccountEntity {
+  return {
+    _key: `${PROVIDER_NAME}:account:${data.orgId}`,
+    _type: ACCOUNT_ENTITY_TYPE,
+    _class: ACCOUNT_ENTITY_CLASS,
+    accountId: data.orgId,
+    name: data.orgName,
+    displayName: `Threat Stack - ${data.orgName}`,
+  };
+}
 
 export function createAgentEntities(
   data: ThreatStackAgent[],
