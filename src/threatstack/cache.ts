@@ -9,7 +9,7 @@ import {
 
 export interface ThreatStackAgentCacheEntry {
   key: string;
-  data: ThreatStackAgent;
+  data?: ThreatStackAgent;
 }
 
 export interface ThreatStackVulnerabilityCacheData {
@@ -19,7 +19,7 @@ export interface ThreatStackVulnerabilityCacheData {
 
 export interface ThreatStackVulnerabilityCacheEntry {
   key: string;
-  data: ThreatStackVulnerabilityCacheData;
+  data?: ThreatStackVulnerabilityCacheData;
 }
 
 export function createAgentCache(
@@ -37,11 +37,9 @@ export function createAgentCache(
       });
     },
 
-    getIds: async () => {
+    getIds: async (): Promise<string[]> => {
       const entry = await cache.getEntry(idsKey);
-      if (entry) {
-        return entry.data as string[];
-      }
+      return entry.data || [];
     },
 
     getEntries: async (
@@ -63,7 +61,7 @@ export function createAgentCache(
 
     getData: async (id: string) => {
       const entry = await cache.getEntry(`${entryKeyPrefix}/${id}`);
-      if (entry) {
+      if (entry.data) {
         return entry.data;
       } else {
         throw new Error(
@@ -86,11 +84,9 @@ export function createVulnerabilityCache(cache: IntegrationCache) {
       });
     },
 
-    getIds: async () => {
+    getIds: async (): Promise<string[]> => {
       const entry = await cache.getEntry(idsKey);
-      if (entry) {
-        return entry.data as string[];
-      }
+      return entry.data || [];
     },
 
     getEntries: async (
@@ -112,7 +108,7 @@ export function createVulnerabilityCache(cache: IntegrationCache) {
 
     getData: async (id: string) => {
       const entry = await cache.getEntry(`${entryKeyPrefix}/${id}`);
-      if (entry) {
+      if (entry.data) {
         return entry.data;
       } else {
         throw new Error(

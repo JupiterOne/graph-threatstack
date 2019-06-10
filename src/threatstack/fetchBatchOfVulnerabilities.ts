@@ -4,11 +4,12 @@ import {
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
 import { ThreatStackExecutionContext } from "../types";
+import { appendFetchSuccess } from "../util/fetchSuccess";
 import {
   createVulnerabilityCache,
   ThreatStackVulnerabilityCacheEntry,
 } from "./cache";
-import ThreatStackClient from "./client";
+import ThreatStackClient from "./ThreatStackClient";
 import { ThreatStackVulnerableServer } from "./types";
 
 /**
@@ -33,7 +34,9 @@ export default async function fetchBatchOfVulnerabilities(
   executionContext: ThreatStackExecutionContext,
   iterationState: IntegrationStepIterationState,
 ): Promise<IntegrationStepExecutionResult> {
-  const cache = createVulnerabilityCache(executionContext.clients.getCache());
+  const cache = executionContext.clients.getCache();
+
+  const vulnCache = createVulnerabilityCache(cache);
 
   const {
     instance: { config },
@@ -42,7 +45,8 @@ export default async function fetchBatchOfVulnerabilities(
 
   const client = new ThreatStackClient(config, logger);
 
-  const cachedIds = iterationState.iteration > 0 ? (await cache.getIds())! : [];
+  const cachedIds =
+    iterationState.iteration > 0 ? (await vulnCache.getIds())! : [];
 
   const cacheEntries: ThreatStackVulnerabilityCacheEntry[] = [];
 
@@ -78,12 +82,20 @@ export default async function fetchBatchOfVulnerabilities(
     pagesProcessed++;
   } while (token && pagesProcessed < BATCH_PAGES);
 
-  await Promise.all([cache.putIds(cachedIds), cache.putEntries(cacheEntries)]);
+  await Promise.all([
+    vulnCache.putIds(cachedIds),
+    vulnCache.putEntries(cacheEntries),
+  ]);
+
+  const finished = typeof token !== "string";
+  if (finished) {
+    appendFetchSuccess(cache, "vulnerabilities");
+  }
 
   return {
     iterationState: {
       ...iterationState,
-      finished: typeof token !== "string",
+      finished,
       state: {
         token,
         limit: 100,

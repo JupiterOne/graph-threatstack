@@ -4,8 +4,9 @@ import {
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
 import { ThreatStackExecutionContext } from "../types";
+import { appendFetchSuccess } from "../util/fetchSuccess";
 import { createAgentCache, ThreatStackAgentCacheEntry } from "./cache";
-import ThreatStackClient from "./client";
+import ThreatStackClient from "./ThreatStackClient";
 import { ThreatStackAgentStatus } from "./types";
 
 /**
@@ -29,10 +30,9 @@ export default async function fetchBatchOfAgents(
   iterationState: IntegrationStepIterationState,
   agentStatus: ThreatStackAgentStatus,
 ): Promise<IntegrationStepExecutionResult> {
-  const cache = createAgentCache(
-    executionContext.clients.getCache(),
-    agentStatus,
-  );
+  const cache = executionContext.clients.getCache();
+
+  const agentCache = createAgentCache(cache, agentStatus);
 
   const {
     instance: { config },
@@ -41,7 +41,8 @@ export default async function fetchBatchOfAgents(
 
   const client = new ThreatStackClient(config, logger);
 
-  const cachedIds = iterationState.iteration > 0 ? (await cache.getIds())! : [];
+  const cachedIds =
+    iterationState.iteration > 0 ? (await agentCache.getIds())! : [];
 
   const cacheEntries: ThreatStackAgentCacheEntry[] = [];
 
@@ -63,12 +64,20 @@ export default async function fetchBatchOfAgents(
     pagesProcessed++;
   } while (token && pagesProcessed < BATCH_PAGES);
 
-  await Promise.all([cache.putIds(cachedIds), cache.putEntries(cacheEntries)]);
+  await Promise.all([
+    agentCache.putIds(cachedIds),
+    agentCache.putEntries(cacheEntries),
+  ]);
+
+  const finished = typeof token !== "string";
+  if (finished) {
+    appendFetchSuccess(cache, `${agentStatus}Agents`);
+  }
 
   return {
     iterationState: {
       ...iterationState,
-      finished: typeof token !== "string",
+      finished,
       state: {
         token,
         limit: 100,

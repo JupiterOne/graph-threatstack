@@ -22,11 +22,26 @@ import {
   ThreatStackAccountEntity,
   ThreatStackAgentEntity,
 } from "./types";
+import { fetchSucceeded } from "./util/fetchSuccess";
 import getCVE from "./util/getCVE";
 
 export default async function synchronizeGraph(
   context: IntegrationExecutionContext,
 ): Promise<IntegrationExecutionResult> {
+  if (
+    !(await fetchSucceeded(context.clients.getCache(), [
+      "onlineAgents",
+      "offlineAgents",
+      "vulnerabilities",
+    ]))
+  ) {
+    const err = new Error("Data fetching did not complete");
+    context.logger.error({ err }, "Graph synchronization aborted");
+    return {
+      error: err,
+    };
+  }
+
   const { graph, persister } = initializeContext(context);
 
   const onlineAgentsCache = createAgentCache(
@@ -39,18 +54,16 @@ export default async function synchronizeGraph(
     "offline",
   );
 
-  // TODO abort if collecting any data failed
-
   const [onlineAgentIds, offlineAgentIds] = await Promise.all([
     onlineAgentsCache.getIds(),
     offlineAgentsCache.getIds(),
   ]);
 
   const onlineAgents = onlineAgentIds
-    ? (await onlineAgentsCache.getEntries(onlineAgentIds)).map(e => e.data)
+    ? (await onlineAgentsCache.getEntries(onlineAgentIds)).map(e => e.data!)
     : [];
   const offlineAgents = offlineAgentIds
-    ? (await offlineAgentsCache.getEntries(offlineAgentIds)).map(e => e.data)
+    ? (await offlineAgentsCache.getEntries(offlineAgentIds)).map(e => e.data!)
     : [];
 
   const newAgentEntities = [
@@ -77,7 +90,7 @@ export default async function synchronizeGraph(
 
   const vunerabilityIds = await vulnerabilitiesCache.getIds();
   const vulnerabilities = vunerabilityIds
-    ? (await vulnerabilitiesCache.getEntries(vunerabilityIds)).map(e => e.data)
+    ? (await vulnerabilitiesCache.getEntries(vunerabilityIds)).map(e => e.data!)
     : [];
 
   const newVulnerabilityRelationships = [];
