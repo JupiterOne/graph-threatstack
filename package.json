@@ -30,7 +30,7 @@
   "dependencies": {
     "@hapi/hawk": "^7.1.0",
     "@lifeomic/attempt": "^3.0.0",
-    "axios": "^0.18.0",
+    "axios": "^0.19.0",
     "axios-extensions": "^3.0.6",
     "node-fetch": "^2.6.0",
     "p-queue": "^6.0.2"
