@@ -26,18 +26,19 @@ interface HawkHeaderOptions {
   contentType: string;
 }
 
-interface AgentsResponse {
+interface ApiResponse {
   token: string | null;
+}
+
+interface AgentsResponse extends ApiResponse {
   agents: ThreatStackAgent[];
 }
 
-interface VulnerabilitiesResponse {
-  token: string | null;
+interface VulnerabilitiesResponse extends ApiResponse {
   cves: ThreatStackVulnerability[];
 }
 
-interface VulnerableServersResponse {
-  token: string | null;
+interface VulnerableServersResponse extends ApiResponse {
   servers: ThreatStackVulnerableServer[];
 }
 
@@ -81,6 +82,7 @@ export default class ThreatStackClient {
   ): Promise<AgentsResponse> {
     return this.makeRequest<AgentsResponse>(
       `${this.BASE_API_URL}/agents?status=${status}`,
+      { token: null, agents: [] },
       token,
     );
   }
@@ -90,6 +92,7 @@ export default class ThreatStackClient {
   ): Promise<VulnerabilitiesResponse> {
     return this.makeRequest<VulnerabilitiesResponse>(
       `${this.BASE_API_URL}/vulnerabilities`,
+      { token: null, cves: [] },
       token,
     );
   }
@@ -100,12 +103,14 @@ export default class ThreatStackClient {
   ): Promise<VulnerableServersResponse> {
     return this.makeRequest<VulnerableServersResponse>(
       `${this.BASE_API_URL}/vulnerabilities/${cveNumber}/servers`,
+      { token: null, servers: [] },
       token,
     );
   }
 
-  private async makeRequest<T>(
+  private async makeRequest<T extends ApiResponse>(
     resourceUrl: string,
+    emptyResponse: T,
     token?: string,
   ): Promise<T> {
     const paginatedUrl = new URL(resourceUrl);
@@ -143,6 +148,12 @@ export default class ThreatStackClient {
               "Fetch completed",
             );
             return (json as unknown) as T;
+          } else if (response.status === 404) {
+            this.logger.info(
+              { url },
+              "Received 404, answering an empty collection",
+            );
+            return emptyResponse;
           } else {
             throw new IntegrationError({
               message: response.statusText,
