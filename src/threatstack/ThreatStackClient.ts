@@ -149,6 +149,10 @@ export default class ThreatStackClient {
             );
             return (json as unknown) as T;
           } else if (response.status === 404) {
+            this.logger.info(
+              { url },
+              "Received 404, answering an empty collection",
+            );
             return emptyResponse;
           } else {
             throw new IntegrationError({
