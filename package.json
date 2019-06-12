@@ -29,14 +29,12 @@
   },
   "dependencies": {
     "@hapi/hawk": "^7.1.0",
+    "@jupiterone/jupiter-managed-integration-sdk": "^24.0.2",
     "@lifeomic/attempt": "^3.0.0",
     "axios": "^0.19.0",
     "axios-extensions": "^3.0.6",
     "node-fetch": "^2.6.0",
     "p-queue": "^6.0.2"
-  },
-  "peerDependencies": {
-    "@jupiterone/jupiter-managed-integration-sdk": "^24.0.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",
@@ -45,7 +43,6 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.3.4",
     "@babel/preset-env": "^7.3.1",
     "@babel/preset-typescript": "^7.1.0",
-    "@jupiterone/jupiter-managed-integration-sdk": "^24.0.1",
     "@types/bunyan": "^1.8.5",
     "@types/fs-extra": "^7.0.0",
     "@types/jest": "^24.0.0",

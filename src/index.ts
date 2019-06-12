@@ -2,6 +2,7 @@ import {
   IntegrationError,
   IntegrationInvocationConfig,
   IntegrationStepExecutionContext,
+  IntegrationStepInvocationEvent,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
 import initializeContext from "./initializeContext";
@@ -11,7 +12,24 @@ import fetchBatchOfAgents from "./threatstack/fetchBatchOfAgents";
 import fetchBatchOfVulnerabilities from "./threatstack/fetchBatchOfVulnerabilities";
 
 const invocationConfig: IntegrationInvocationConfig = {
+  instanceConfigFields: {
+    orgName: {
+      type: "string",
+    },
+    orgId: {
+      type: "string",
+    },
+    userId: {
+      type: "string",
+    },
+    apiKey: {
+      type: "string",
+      mask: true,
+    },
+  },
+
   invocationValidator,
+
   integrationStepPhases: [
     {
       steps: [
@@ -21,15 +39,9 @@ const invocationConfig: IntegrationInvocationConfig = {
           executionHandler: async (
             executionContext: IntegrationStepExecutionContext,
           ) => {
-            const iterationState = executionContext.event.iterationState;
-            if (!iterationState) {
-              throw new IntegrationError(
-                "Expected iterationState not found in event!",
-              );
-            }
             return fetchBatchOfAgents(
               await initializeContext(executionContext),
-              iterationState,
+              getIterationState(executionContext.event),
               "online",
             );
           },
@@ -44,15 +56,9 @@ const invocationConfig: IntegrationInvocationConfig = {
           executionHandler: async (
             executionContext: IntegrationStepExecutionContext,
           ) => {
-            const iterationState = executionContext.event.iterationState;
-            if (!iterationState) {
-              throw new IntegrationError(
-                "Expected iterationState not found in event!",
-              );
-            }
             return fetchBatchOfAgents(
               await initializeContext(executionContext),
-              iterationState,
+              getIterationState(executionContext.event),
               "offline",
             );
           },
@@ -67,15 +73,9 @@ const invocationConfig: IntegrationInvocationConfig = {
           executionHandler: async (
             executionContext: IntegrationStepExecutionContext,
           ) => {
-            const iterationState = executionContext.event.iterationState;
-            if (!iterationState) {
-              throw new IntegrationError(
-                "Expected iterationState not found in event!",
-              );
-            }
             return fetchBatchOfVulnerabilities(
               await initializeContext(executionContext),
-              iterationState,
+              getIterationState(executionContext.event),
             );
           },
         },
@@ -91,5 +91,14 @@ const invocationConfig: IntegrationInvocationConfig = {
     },
   ],
 };
+
+function getIterationState(event: IntegrationStepInvocationEvent) {
+  const iterationState = event.iterationState;
+  if (!iterationState) {
+    throw new IntegrationError("Expected iterationState not found in event!");
+  } else {
+    return iterationState;
+  }
+}
 
 export default invocationConfig;
