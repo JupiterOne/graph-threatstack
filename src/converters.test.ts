@@ -1,6 +1,7 @@
 import { RelationshipDirection } from "@jupiterone/jupiter-managed-integration-sdk";
 
 import {
+  createAccountEntity,
   createAccountRelationships,
   createAgentEntities,
   createAgentFindingMappedRelationship,
@@ -8,7 +9,7 @@ import {
 import {
   ThreatStackAgent,
   ThreatStackVulnerability,
-} from "./ThreatStackClient";
+} from "./threatstack/types";
 import {
   ACCOUNT_AGENT_RELATIONSHIP_TYPE,
   ACCOUNT_ENTITY_CLASS,
@@ -132,6 +133,24 @@ export const vulnerableServers = [
     agentId: "8b0f0b28-7fce-11e9-a123-99cdd68cb069",
   },
 ];
+
+test("createAccountEntity", () => {
+  expect(
+    createAccountEntity({
+      apiKey: "api-key",
+      orgId: "org-id",
+      orgName: "org-name",
+      userId: "user-id",
+    }),
+  ).toEqual({
+    _key: "threatstack:account:org-id",
+    _type: ACCOUNT_ENTITY_TYPE,
+    _class: ACCOUNT_ENTITY_CLASS,
+    accountId: "org-id",
+    name: "org-name",
+    displayName: "Threat Stack - org-name",
+  });
+});
 
 test("createAccountRelationships", () => {
   const agentEntities = createAgentEntities(agents);

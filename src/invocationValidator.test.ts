@@ -6,6 +6,25 @@ import { ThreatStackIntegrationConfig } from "./types";
 const missingConfigItemMsg =
   "Instance configuration requires all of { orgId, orgName, userId, apiKey }";
 
+test("valid config", async () => {
+  const accountId = uuid();
+  const config: ThreatStackIntegrationConfig = {
+    orgName: "my-org",
+    orgId: uuid(),
+    userId: uuid(),
+    apiKey: uuid(),
+  };
+
+  const executionContext = createTestIntegrationExecutionContext({
+    instance: {
+      accountId,
+      config,
+    } as any,
+  });
+
+  await expect(invocationValidator(executionContext)).resolves.toBeUndefined();
+});
+
 test("should throw error if configuration is not found", async () => {
   const accountId = uuid();
   const executionContext = createTestIntegrationExecutionContext({
