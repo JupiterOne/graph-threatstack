@@ -22,12 +22,19 @@ export interface ThreatStackVulnerabilityCacheEntry {
   data?: ThreatStackVulnerabilityCacheData;
 }
 
+export interface ThreatStackDataCache<E, D> {
+  putIds: (ids: string[]) => Promise<void>;
+  getIds: () => Promise<string[]>;
+  getData: (key: string) => Promise<D>;
+  getEntries: (keys: string[]) => Promise<E[]>;
+  putEntries: (entries: E[]) => Promise<void>;
+}
+
 export function createAgentCache(
   cache: IntegrationCache,
   agentStatus: ThreatStackAgentStatus,
-) {
+): ThreatStackDataCache<ThreatStackAgentCacheEntry, ThreatStackAgent> {
   const idsKey = `agentIds/${agentStatus}`;
-  const entryKeyPrefix = `agents/${agentStatus}`;
 
   return {
     putIds: async (ids: string[]) => {
@@ -42,39 +49,34 @@ export function createAgentCache(
       return entry.data || [];
     },
 
-    getEntries: async (
-      keys: string[],
-    ): Promise<ThreatStackAgentCacheEntry[]> => {
+    getData: async (key: string) => {
+      const entry = await cache.getEntry(key);
+      if (entry.data) {
+        return entry.data;
+      } else {
+        throw new Error(
+          `Data not found in cache for '${key}', something is wrong`,
+        );
+      }
+    },
+
+    getEntries: async (keys: string[]) => {
       return cache.getEntries(keys);
     },
 
     putEntries: async (entries: ThreatStackAgentCacheEntry[]) => {
       await cache.putEntries(entries);
     },
-
-    putData: async (data: ThreatStackAgent) => {
-      await cache.putEntry({
-        key: `${entryKeyPrefix}/${data.id}`,
-        data,
-      });
-    },
-
-    getData: async (id: string) => {
-      const entry = await cache.getEntry(`${entryKeyPrefix}/${id}`);
-      if (entry.data) {
-        return entry.data;
-      } else {
-        throw new Error(
-          `Data not found in cache for '${entryKeyPrefix}/${id}', something is wrong`,
-        );
-      }
-    },
   };
 }
 
-export function createVulnerabilityCache(cache: IntegrationCache) {
+export function createVulnerabilityCache(
+  cache: IntegrationCache,
+): ThreatStackDataCache<
+  ThreatStackVulnerabilityCacheEntry,
+  ThreatStackVulnerabilityCacheData
+> {
   const idsKey = "vulnIds";
-  const entryKeyPrefix = "vulns";
 
   return {
     putIds: async (ids: string[]) => {
@@ -89,32 +91,23 @@ export function createVulnerabilityCache(cache: IntegrationCache) {
       return entry.data || [];
     },
 
-    getEntries: async (
-      keys: string[],
-    ): Promise<ThreatStackVulnerabilityCacheEntry[]> => {
+    getData: async (key: string) => {
+      const entry = await cache.getEntry(key);
+      if (entry.data) {
+        return entry.data;
+      } else {
+        throw new Error(
+          `Data not found in cache for '${key}', something is wrong`,
+        );
+      }
+    },
+
+    getEntries: async (keys: string[]) => {
       return cache.getEntries(keys);
     },
 
     putEntries: async (entries: ThreatStackVulnerabilityCacheEntry[]) => {
       await cache.putEntries(entries);
-    },
-
-    putData: async (data: ThreatStackVulnerabilityCacheData) => {
-      await cache.putEntry({
-        key: `${entryKeyPrefix}/${data.vulnerability.cveNumber}`,
-        data,
-      });
-    },
-
-    getData: async (id: string) => {
-      const entry = await cache.getEntry(`${entryKeyPrefix}/${id}`);
-      if (entry.data) {
-        return entry.data;
-      } else {
-        throw new Error(
-          `Data not found in cache for '${entryKeyPrefix}/${id}', something is wrong`,
-        );
-      }
     },
   };
 }

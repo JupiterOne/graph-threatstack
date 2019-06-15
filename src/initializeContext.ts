@@ -7,5 +7,6 @@ export default function initializeContext(
   return {
     ...context,
     ...context.clients.getClients(),
+    cache: context.clients.getCache(),
   };
 }

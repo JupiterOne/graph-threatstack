@@ -128,9 +128,7 @@ export function createAgentFindingMappedRelationship(
       sourceEntityKey: agent._key,
       relationshipDirection: RelationshipDirection.FORWARD,
       targetFilterKeys: [["_type", "_key"]],
-      targetEntity: {
-        ...cve,
-      },
+      targetEntity: cve as any,
     },
   };
 }

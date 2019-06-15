@@ -1,6 +1,7 @@
 import {
   EntityFromIntegration,
   GraphClient,
+  IntegrationCache,
   IntegrationExecutionContext,
   MappedRelationshipFromIntegration,
   PersisterClient,
@@ -31,6 +32,7 @@ export interface ThreatStackExecutionContext
   extends IntegrationExecutionContext {
   graph: GraphClient;
   persister: PersisterClient;
+  cache: IntegrationCache;
 }
 
 export interface ThreatStackAccountEntity extends EntityFromIntegration {
