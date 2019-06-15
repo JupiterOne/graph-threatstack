@@ -1,6 +1,9 @@
 import {
+  IntegrationError,
   IntegrationExecutionContext,
   IntegrationExecutionResult,
+  PersisterOperationsResult,
+  summarizePersisterOperationsResults,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
 import {
@@ -13,6 +16,9 @@ import initializeContext from "./initializeContext";
 import {
   createAgentCache,
   createVulnerabilityCache,
+  ThreatStackDataCache,
+  ThreatStackVulnerabilityCacheData,
+  ThreatStackVulnerabilityCacheEntry,
 } from "./threatstack/cache";
 import {
   ACCOUNT_AGENT_RELATIONSHIP_TYPE,
@@ -21,38 +27,39 @@ import {
   AGENT_FINDING_RELATIONSHIP_TYPE,
   ThreatStackAccountEntity,
   ThreatStackAgentEntity,
+  ThreatStackAgentFindingRelationship,
+  ThreatStackExecutionContext,
 } from "./types";
 import { fetchSucceeded } from "./util/fetchSuccess";
 import getCVE from "./util/getCVE";
 
 export default async function synchronizeGraph(
-  context: IntegrationExecutionContext,
+  executionContext: IntegrationExecutionContext,
 ): Promise<IntegrationExecutionResult> {
+  const context = initializeContext(executionContext);
+  const { cache, logger } = context;
+
+  const results: PersisterOperationsResult[] = [];
+
   if (
-    !(await fetchSucceeded(context.clients.getCache(), [
+    !(await fetchSucceeded(cache, [
       "onlineAgents",
       "offlineAgents",
       "vulnerabilities",
     ]))
   ) {
-    const err = new Error("Data fetching did not complete");
-    context.logger.error({ err }, "Graph synchronization aborted");
-    return {
-      error: err,
-    };
+    throw new IntegrationError({
+      message: "Failed to fetch data from provider",
+      expose: true,
+    });
   }
 
-  const { graph, persister } = initializeContext(context);
+  const accountEntity = createAccountEntity(context.instance.config);
 
-  const onlineAgentsCache = createAgentCache(
-    context.clients.getCache(),
-    "online",
-  );
+  results.push(await synchronizeAccount(context, accountEntity));
 
-  const offlineAgentsCache = createAgentCache(
-    context.clients.getCache(),
-    "offline",
-  );
+  const onlineAgentsCache = createAgentCache(cache, "online");
+  const offlineAgentsCache = createAgentCache(cache, "offline");
 
   const [onlineAgentIds, offlineAgentIds] = await Promise.all([
     onlineAgentsCache.getIds(),
@@ -71,32 +78,106 @@ export default async function synchronizeGraph(
     ...createAgentEntities(offlineAgents),
   ];
 
-  const accountEntity = createAccountEntity(context.instance.config);
-
-  const newAccountAgentRelationships = createAccountRelationships(
-    accountEntity,
-    newAgentEntities,
-    ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+  results.push(await synchronizeAgentEntities(context, newAgentEntities));
+  results.push(
+    await synchronizeAccountAgentRelationships(
+      context,
+      accountEntity,
+      newAgentEntities,
+    ),
   );
 
+  const vulnerabilitiesCache = createVulnerabilityCache(cache);
+  const vulnerabilityIds = await vulnerabilitiesCache.getIds();
+  if (vulnerabilityIds.length > 0) {
+    results.push(
+      await synchronizeVulnerabilities(
+        context,
+        newAgentEntities,
+        vulnerabilityIds,
+        vulnerabilitiesCache,
+      ),
+    );
+  } else {
+    logger.info(
+      "Skipping synchronization of vulnerabilities, received empty collection",
+    );
+  }
+
+  return {
+    operations: summarizePersisterOperationsResults(...results),
+  };
+}
+
+async function synchronizeAccount(
+  context: ThreatStackExecutionContext,
+  accountEntity: ThreatStackAccountEntity,
+): Promise<PersisterOperationsResult> {
+  const { persister, graph } = context;
+  const oldAccountEntities = await graph.findAllEntitiesByType<
+    ThreatStackAccountEntity
+  >(ACCOUNT_ENTITY_TYPE);
+  return await persister.publishEntityOperations(
+    await persister.processEntities(oldAccountEntities, [accountEntity]),
+  );
+}
+
+async function synchronizeAgentEntities(
+  context: ThreatStackExecutionContext,
+  agentEntities: ThreatStackAgentEntity[],
+): Promise<PersisterOperationsResult> {
+  const { persister, graph } = context;
+  const oldAgentEntities = await graph.findEntitiesByType<
+    ThreatStackAgentEntity
+  >(AGENT_ENTITY_TYPE);
+  return await persister.publishEntityOperations(
+    await persister.processEntities(oldAgentEntities, agentEntities),
+  );
+}
+
+async function synchronizeAccountAgentRelationships(
+  context: ThreatStackExecutionContext,
+  accountEntity: ThreatStackAccountEntity,
+  agentEntities: ThreatStackAgentEntity[],
+): Promise<PersisterOperationsResult> {
+  const { persister, graph } = context;
+
+  return await persister.publishRelationshipOperations(
+    persister.processRelationships(
+      await graph.findRelationshipsByType(ACCOUNT_AGENT_RELATIONSHIP_TYPE),
+      createAccountRelationships(
+        accountEntity,
+        agentEntities,
+        ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+      ),
+    ),
+  );
+}
+
+async function synchronizeVulnerabilities(
+  context: ThreatStackExecutionContext,
+  agents: ThreatStackAgentEntity[],
+  vulnerabilityIds: string[],
+  vulnerabilityCache: ThreatStackDataCache<
+    ThreatStackVulnerabilityCacheEntry,
+    ThreatStackVulnerabilityCacheData
+  >,
+): Promise<PersisterOperationsResult> {
+  const { persister, graph } = context;
+
   const agentsById: { [id: string]: ThreatStackAgentEntity } = {};
-  for (const agent of newAgentEntities || []) {
+  for (const agent of agents || []) {
     agentsById[agent.id] = agent;
   }
 
-  const vulnerabilitiesCache = createVulnerabilityCache(
-    context.clients.getCache(),
-  );
+  const newVulnerabilityRelationships: ThreatStackAgentFindingRelationship[] = [];
 
-  const vunerabilityIds = await vulnerabilitiesCache.getIds();
-  const vulnerabilities = vunerabilityIds
-    ? (await vulnerabilitiesCache.getEntries(vunerabilityIds)).map(e => e.data!)
-    : [];
-
-  const newVulnerabilityRelationships = [];
-
-  for (const vulnData of vulnerabilities) {
-    const { vulnerability: vuln, vulnerableServers } = vulnData;
+  // Build relationships by iterating ids, dropping raw data after it is processed.
+  for (const vulnId of vulnerabilityIds) {
+    const {
+      vulnerability: vuln,
+      vulnerableServers,
+    } = await vulnerabilityCache.getData(vulnId);
 
     const cve = getCVE(vuln.cveNumber, {
       package: vuln.reportedPackage,
@@ -127,34 +208,14 @@ export default async function synchronizeGraph(
     }
   }
 
-  const [
-    oldAccountEntities,
-    oldAgentEntities,
-    oldAccountAgentRelationships,
-    oldVulnerabilityRelationships,
-  ] = await Promise.all([
-    graph.findAllEntitiesByType<ThreatStackAccountEntity>(ACCOUNT_ENTITY_TYPE),
-    graph.findEntitiesByType<ThreatStackAgentEntity>(AGENT_ENTITY_TYPE),
-    graph.findRelationshipsByType(ACCOUNT_AGENT_RELATIONSHIP_TYPE),
-    graph.findRelationshipsByType(AGENT_FINDING_RELATIONSHIP_TYPE),
-  ]);
+  const oldVulnerabilityRelationships = await graph.findRelationshipsByType(
+    AGENT_FINDING_RELATIONSHIP_TYPE,
+  );
 
-  return {
-    operations: await persister.publishPersisterOperations([
-      [
-        ...persister.processEntities(oldAccountEntities, [accountEntity]),
-        ...persister.processEntities(oldAgentEntities, newAgentEntities),
-      ],
-      [
-        ...persister.processRelationships(
-          oldAccountAgentRelationships,
-          newAccountAgentRelationships,
-        ),
-        ...persister.processRelationships(
-          oldVulnerabilityRelationships,
-          newVulnerabilityRelationships,
-        ),
-      ],
-    ]),
-  };
+  return persister.publishRelationshipOperations(
+    await persister.processRelationships(
+      oldVulnerabilityRelationships,
+      newVulnerabilityRelationships,
+    ),
+  );
 }
