@@ -1,5 +1,5 @@
 {
-  "name": "@jupiterone/jupiter-integration-threatstack",
+  "name": "@jupiterone/graph-threatstack",
   "version": "1.0.5",
   "description": "JupiterOne managed integration for Threat Stack.",
   "main": "dist/index.js",
