@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@hapi/hawk": "^7.1.0",
-    "@jupiterone/jupiter-managed-integration-sdk": "^24.1.4",
+    "@jupiterone/jupiter-managed-integration-sdk": "25.0.0-secretsmanager.0",
     "@lifeomic/attempt": "^3.0.0",
     "axios": "^0.19.0",
     "axios-extensions": "^3.0.6",
@@ -45,6 +45,7 @@
     "@babel/preset-typescript": "^7.1.0",
     "@types/bunyan": "^1.8.5",
     "@types/fs-extra": "^7.0.0",
+    "@types/gremlin": "^3.4.2",
     "@types/jest": "^24.0.0",
     "@types/node": "~8.10.0",
     "@types/node-fetch": "^2.3.5",
