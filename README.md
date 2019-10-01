@@ -1,6 +1,6 @@
 # JupiterOne Managed Integration for Threat Stack
 
-[![Build Status](https://travis-ci.org/JupiterOne/jupiter-integration-threatstack.svg?branch=master)](https://travis-ci.org/JupterOne/jupiter-integration-threatstack)
+[![Build Status](https://travis-ci.org/JupiterOne/graph-threatstack.svg?branch=master)](https://travis-ci.org/JupterOne/graph-threatstack)
 
 This JupiterOne integration connects to a Threat Stack account using a provided
 API Auth token and ingests the Threat Stack server agents and the vulnerability
