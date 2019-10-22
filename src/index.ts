@@ -34,6 +34,7 @@ const invocationConfig: IntegrationInvocationConfig = {
     {
       steps: [
         {
+          id: "fetch-agents-online",
           name: "Fetch Online Agents",
           iterates: true,
           executionHandler: async (
@@ -51,6 +52,7 @@ const invocationConfig: IntegrationInvocationConfig = {
     {
       steps: [
         {
+          id: "fetch-agents-offline",
           name: "Fetch Offline Agents",
           iterates: true,
           executionHandler: async (
@@ -68,6 +70,7 @@ const invocationConfig: IntegrationInvocationConfig = {
     {
       steps: [
         {
+          id: "fetch-vulns",
           name: "Fetch Vulnerabilities",
           iterates: true,
           executionHandler: async (
@@ -84,6 +87,7 @@ const invocationConfig: IntegrationInvocationConfig = {
     {
       steps: [
         {
+          id: "synch",
           name: "Synchronize Graph",
           executionHandler: synchronizeGraph,
         },

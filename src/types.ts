@@ -7,6 +7,11 @@ import {
   PersisterClient,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
+import {
+  ThreatStackVulnerability,
+  ThreatStackVulnerableServer,
+} from "./threatstack/types";
+
 export const PROVIDER_NAME = "threatstack";
 
 export const ACCOUNT_ENTITY_TYPE = PROVIDER_NAME + "_account";
@@ -67,4 +72,13 @@ export interface ThreatStackAgentFindingRelationship
   extends MappedRelationshipFromIntegration {
   finding?: string;
   suppressed?: boolean;
+}
+
+export interface ResourceCacheState {
+  resourceFetchCompleted?: boolean;
+}
+
+export interface ThreatStackVulnerabilityCacheData {
+  vulnerability: ThreatStackVulnerability;
+  vulnerableServers: ThreatStackVulnerableServer[];
 }

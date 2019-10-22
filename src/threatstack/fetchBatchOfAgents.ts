@@ -1,11 +1,9 @@
 import {
-  IntegrationStepExecutionResult,
+  IntegrationCacheEntry,
   IntegrationStepIterationState,
 } from "@jupiterone/jupiter-managed-integration-sdk";
 
-import { ThreatStackExecutionContext } from "../types";
-import { appendFetchSuccess } from "../util/fetchSuccess";
-import { createAgentCache, ThreatStackAgentCacheEntry } from "./cache";
+import { ResourceCacheState, ThreatStackExecutionContext } from "../types";
 import ThreatStackClient from "./ThreatStackClient";
 import { ThreatStackAgentStatus } from "./types";
 
@@ -29,10 +27,12 @@ export default async function fetchBatchOfAgents(
   executionContext: ThreatStackExecutionContext,
   iterationState: IntegrationStepIterationState,
   agentStatus: ThreatStackAgentStatus,
-): Promise<IntegrationStepExecutionResult> {
+): Promise<IntegrationStepIterationState> {
   const cache = executionContext.clients.getCache();
-
-  const agentCache = createAgentCache(cache, agentStatus);
+  const resourceCache = cache.iterableCache<
+    IntegrationCacheEntry,
+    ResourceCacheState
+  >(`${agentStatus}Agents`);
 
   const {
     instance: { config },
@@ -41,49 +41,34 @@ export default async function fetchBatchOfAgents(
 
   const client = new ThreatStackClient(config, logger);
 
-  const cachedIds =
-    iterationState.iteration > 0 ? (await agentCache.getIds())! : [];
-
-  const cacheEntries: ThreatStackAgentCacheEntry[] = [];
-
   let pagesProcessed = 0;
+  let entryCount: number = iterationState.state.count || 0;
   let token = iterationState.state.token;
 
   do {
     const agents = await client.getServerAgents(agentStatus, token);
-
-    for (const agent of agents.agents) {
-      cachedIds.push(agent.id);
-      cacheEntries.push({
-        key: agent.id,
-        data: agent,
-      });
-    }
+    entryCount = await resourceCache.putEntries(
+      agents.agents.map(e => ({
+        key: e.id,
+        data: e,
+      })),
+    );
 
     token = agents.token;
     pagesProcessed++;
   } while (token && pagesProcessed < BATCH_PAGES);
 
-  await Promise.all([
-    agentCache.putIds(cachedIds),
-    agentCache.putEntries(cacheEntries),
-  ]);
-
   const finished = typeof token !== "string";
-  if (finished) {
-    appendFetchSuccess(cache, `${agentStatus}Agents`);
-  }
+  await resourceCache.putState({ resourceFetchCompleted: finished });
 
   return {
-    iterationState: {
-      ...iterationState,
-      finished,
-      state: {
-        token,
-        limit: 100,
-        pages: pagesProcessed,
-        count: cachedIds.length,
-      },
+    ...iterationState,
+    finished,
+    state: {
+      token,
+      limit: 100,
+      pages: pagesProcessed,
+      count: entryCount,
     },
   };
 }
