@@ -927,10 +927,10 @@
     "@types/istanbul-reports" "^1.1.1"
     "@types/yargs" "^13.0.0"
 
-"@jupiterone/jupiter-managed-integration-sdk@^26.0.0":
-  version "26.0.0"
-  resolved "https://registry.yarnpkg.com/@jupiterone/jupiter-managed-integration-sdk/-/jupiter-managed-integration-sdk-26.0.0.tgz#a37e0d52b057ef86d345b52a0942d7fc5ceb6cd8"
-  integrity sha512-1q6oFn8IdHHwVn1/XG2+Dfe0MGCghGa/15dVD9ZXgnkUueyxmj6IgpFtmelV/DuFwc9I3bUWHm3RyoMG/Ynvrg==
+"@jupiterone/jupiter-managed-integration-sdk@^28.1.1":
+  version "28.1.1"
+  resolved "https://registry.yarnpkg.com/@jupiterone/jupiter-managed-integration-sdk/-/jupiter-managed-integration-sdk-28.1.1.tgz#cbb077862ce66061a6df7588f06fbc068dc0fc8d"
+  integrity sha512-Gr3vZrunH6KgdPNy/9bS3mzGRWghku+ow3IHUWwGZXrWKAhYAAlV2TzM39HpB9Wq67iy4SLKa46pJqR+B7xUHg==
 
 "@lifeomic/attempt@^3.0.0":
   version "3.0.0"
