@@ -87,7 +87,7 @@ const invocationConfig: IntegrationInvocationConfig = {
     {
       steps: [
         {
-          id: "synch",
+          id: "sync",
           name: "Synchronize Graph",
           executionHandler: synchronizeGraph,
         },
