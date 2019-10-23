@@ -31,7 +31,7 @@ Prerequisites:
 Node:
 
 1.  `yarn install`
-1.  `yarn start:graph`
+1.  `yarn start:containers`
 1.  `yarn start`
 
 Activity is logged to the console indicating the operations produced and
@@ -45,7 +45,7 @@ Restart the graph server to clear the data when you want to run the integration
 with no existing data.
 
 ```sh
-yarn restart:graph
+yarn start:containers
 ```
 
 ### Environment Variables
