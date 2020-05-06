@@ -78,12 +78,12 @@ export default async function synchronizeGraph(
 
   const onlineAgents: ThreatStackAgent[] = [];
   await onlineAgentsCache.forEach(e => {
-    onlineAgents.push(e.data);
+    onlineAgents.push(e.entry.data);
   });
 
   const offlineAgents: ThreatStackAgent[] = [];
   await offlineAgentsCache.forEach(e => {
-    offlineAgents.push(e.data);
+    offlineAgents.push(e.entry.data);
   });
 
   const newAgentEntities = [
@@ -174,7 +174,7 @@ async function synchronizeVulnerabilities(
 
   // Build relationships by iterating, dropping raw data after it is processed.
   await vulnerabilityCache.forEach(e => {
-    const { vulnerability: vuln, vulnerableServers } = e.data;
+    const { vulnerability: vuln, vulnerableServers } = e.entry.data;
 
     const cve = getCVE(vuln.cveNumber, {
       package: vuln.reportedPackage,
