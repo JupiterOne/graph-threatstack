@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@hapi/hawk": "^7.1.0",
-    "@jupiterone/jupiter-managed-integration-sdk": "^28.1.1",
+    "@jupiterone/jupiter-managed-integration-sdk": "^33.7.5",
     "@lifeomic/attempt": "^3.0.0",
     "axios": "^0.19.0",
     "axios-extensions": "^3.0.6",
