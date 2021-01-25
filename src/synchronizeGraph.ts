@@ -122,7 +122,10 @@ async function synchronizeAccount(
     ThreatStackAccountEntity
   >(ACCOUNT_ENTITY_TYPE);
   return await persister.publishEntityOperations(
-    await persister.processEntities(oldAccountEntities, [accountEntity]),
+    persister.processEntities({
+      oldEntities: oldAccountEntities,
+      newEntities: [accountEntity],
+    }),
   );
 }
 
@@ -135,7 +138,10 @@ async function synchronizeAgentEntities(
     ThreatStackAgentEntity
   >(AGENT_ENTITY_TYPE);
   return await persister.publishEntityOperations(
-    await persister.processEntities(oldAgentEntities, agentEntities),
+    persister.processEntities({
+      oldEntities: oldAgentEntities,
+      newEntities: agentEntities,
+    }),
   );
 }
 
@@ -147,14 +153,16 @@ async function synchronizeAccountAgentRelationships(
   const { persister, graph } = context;
 
   return await persister.publishRelationshipOperations(
-    persister.processRelationships(
-      await graph.findRelationshipsByType(ACCOUNT_AGENT_RELATIONSHIP_TYPE),
-      createAccountRelationships(
+    persister.processRelationships({
+      oldRelationships: await graph.findRelationshipsByType(
+        ACCOUNT_AGENT_RELATIONSHIP_TYPE,
+      ),
+      newRelationships: createAccountRelationships(
         accountEntity,
         agentEntities,
         ACCOUNT_AGENT_RELATIONSHIP_TYPE,
       ),
-    ),
+    }),
   );
 }
 
@@ -210,9 +218,9 @@ async function synchronizeVulnerabilities(
   );
 
   return persister.publishRelationshipOperations(
-    await persister.processRelationships(
-      oldVulnerabilityRelationships,
-      newVulnerabilityRelationships,
-    ),
+    persister.processRelationships({
+      oldRelationships: oldVulnerabilityRelationships,
+      newRelationships: newVulnerabilityRelationships,
+    }),
   );
 }
