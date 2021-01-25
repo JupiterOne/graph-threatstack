@@ -1,6 +1,6 @@
 {
   "name": "@jupiterone/graph-threatstack",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "JupiterOne managed integration for Threat Stack.",
   "main": "dist/index.js",
   "repository": "https://github.com/jupiterone/graph-threatstack",
