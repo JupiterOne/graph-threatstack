@@ -7,6 +7,25 @@ connects directly to Threat Stack APIs to obtain agents and vulnerability
 findings data. Customers authorize access by creating an API Key in their target
 Threat Stack account and providing that credential to JupiterOne.
 
+## Threat Stack + JupiterOne Integration Benefits
+
+- Visualize Threat Stack agents in the JupiterOne graph.
+- Map Threat Stack agents to aws instances or servers they protect in your JupiterOne account.
+- Map Threat Stack agents to cves they identify in your JupiterOne
+- Monitor changes to Threat Stack agents using JupiterOne alerts.
+
+## How it Works
+
+- JupiterOne periodically fetches Threat Stack agents to update the graph.
+- Write JupiterOne queries to review and monitor updates to the graph.
+- Configure alerts to take action when the JupiterOne graph changes.
+
+## Requirements
+
+- JupiterOne requires the name and id of your Threat Stack organization. JupiterOne also 
+requires the user id and API key of a configured application key.
+- You must have permission in JupiterOne to install new integrations.
+
 ## Integration Instance Configuration
 
 The integration is triggered by an event containing the information for a
